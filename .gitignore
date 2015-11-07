@@ -1,0 +1,9 @@
+*.pyc
+*~
+.ipynb_checkpoints
+*.dvi
+*.synctex.gz
+*.log
+*.aux
+*.bib
+InAs-GaSb/BandStructure/looking_for_edge_states/cluster_calculations/output_1/
