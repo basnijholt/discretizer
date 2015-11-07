@@ -2,8 +2,8 @@
 
 
 ## Ipymd
-Please use ``ipymd`` to read markdown ``md`` instead of ``ipynb`` files.
-If you don't use your own laptop please do:
+Please use ``ipymd`` to work on markdown ``md`` instead of ``ipynb`` files.
+If you use your own laptop please do:
 ```
 pip install git+https://github.com/rossant/ipymd
 ```
