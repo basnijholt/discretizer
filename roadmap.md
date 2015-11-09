@@ -31,5 +31,10 @@ P(x)k_x & k_x B(x) k_x
 \end{pmatrix}
 $$
 
+We should also allow to specify which parameters are constants
+
+## Things to decide
+* if function should work on real space coordinates or in lattice coordinates: ``f(x, y)`` or ``f(i, j)``
+
 # Magnetic field through vector potential
 This should be done by a Peierls substitution. This requires modifying hoppings. I (Rafal) believe it should be done by a post processing once all hoppings are defined (at least as a associated list: direction: value(function)).
