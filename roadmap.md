@@ -33,13 +33,15 @@ $$
 
 We should also allow to specify which parameters are constants
 
-## Remarks
-Leave space to provide ``interpolate = False`` option for midpoints
+## Remarks (future improvements)
+* leave space to provide ``interpolate = False`` option for midpoints
+* leave space for keeping matrices as symbol up to the end
 
 ## Things to decide
 * if function should work on real space coordinates or in lattice coordinates: ``f(x, y)`` or ``f(i, j)``
 
 # Things to do:
+* write down and code test examples
 * find good example of recursive algorithm
 * check how sympy stores expression, how to access last one from the right
 * check how Anton generate valid kwant functions
