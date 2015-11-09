@@ -30,3 +30,6 @@ k_x A(x) k_x & k_xP(x) \\
 P(x)k_x & k_x B(x) k_x
 \end{pmatrix}
 $$
+
+# Magnetic field through vector potential
+This should be done by a Peierls substitution. This requires modifying hoppings. I (Rafal) believe it should be done by a post processing once all hoppings are defined (at least as a associated list: direction: value(function)).
