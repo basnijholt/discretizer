@@ -33,8 +33,20 @@ $$
 
 We should also allow to specify which parameters are constants
 
+## Remarks
+Leave space to provide ``interpolate = False`` option for midpoints
+
 ## Things to decide
 * if function should work on real space coordinates or in lattice coordinates: ``f(x, y)`` or ``f(i, j)``
 
+# Things to do:
+* find good example of recursive algorithm
+* check how sympy stores expression, how to access last one from the right
+* check how Anton generate valid kwant functions
+
 # Magnetic field through vector potential
 This should be done by a Peierls substitution. This requires modifying hoppings. I (Rafal) believe it should be done by a post processing once all hoppings are defined (at least as a associated list: direction: value(function)).
+
+```python
+
+```
