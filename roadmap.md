@@ -39,6 +39,7 @@ We should also allow to specify which parameters are constants
 
 ## Things to decide
 * if function should work on real space coordinates or in lattice coordinates: ``f(x, y)`` or ``f(i, j)``
+* default behaviour at the edges of systems (ask Michael)
 
 # Things to do:
 * write down and code test examples
