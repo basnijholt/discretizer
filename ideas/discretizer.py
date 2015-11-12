@@ -57,6 +57,7 @@ def tb_coefs(k_powers):
 # **************** Operation on sympy expressions **************************
 # Some globals
 coord = sympy.symbols('x y z', commutative=False)
+momentum_operators = sympy.symbols('k_x k_y k_z', commutative=False)
 a = sympy.Symbol('a')
 
 def substitute_functions(expr, space_dependent=[]):
@@ -88,3 +89,51 @@ def derivate(expression, k_powers):
         subs = {c: c+v*a for c, v in zip(coord, v)}
         output.append(coef * expression.subs(subs))
     return sympy.expand(sympy.Add(*output))
+
+
+def split_factors(expr):
+    """ Split symbolic expression for a discretization step.
+
+    Parameters:
+    -----------
+    expr : sympy expression
+        symbolic expression to be split
+
+    Output:
+    -------
+    lhs : sympy expression
+        part of expression standing to the left from operators
+        that acts in current discretization step
+
+    operators: sympy expression
+        operators that perform discretization in current step
+
+    rhs : sympy expression
+        part of expression that is derivated in current step
+
+    """
+    assert isinstance(expr, sympy.Mul), 'input expr is not sympy.Mul'
+    output = {'rhs': [], 'operators': [], 'lhs': []}
+    normal = True
+
+    iterator = iter(expr.args[::-1])
+    for factor in iterator:
+        if factor not in momentum_operators:
+            output['rhs'].append(factor)
+        else:
+            output['operators'].append(factor)
+            break
+
+    for factor in iterator:
+        if factor in momentum_operators:
+            output['operators'].append(factor)
+        else:
+            output['lhs'].append(factor)
+            break
+
+    for factor in iterator:
+        output['lhs'].append(factor)
+
+    output = tuple(sympy.Mul(*output[key][::-1])
+                   for key in ['lhs', 'operators', 'rhs'])
+    return output
