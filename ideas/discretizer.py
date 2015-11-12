@@ -127,6 +127,8 @@ def split_factors(expr):
     for factor in iterator:
         if factor in momentum_operators:
             output['operators'].append(factor)
+        elif factor.func == sympy.Pow and factor.args[0] in momentum_operators:
+            output['operators'].append(factor)
         else:
             output['lhs'].append(factor)
             break
