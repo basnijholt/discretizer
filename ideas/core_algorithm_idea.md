@@ -75,7 +75,7 @@ First idea may be to:
 >>> expr = kx*A*kx + C * kx**2 * ky
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7fcb55a8ca58>
+<graphviz.files.Source at 0x7f2fb9d60a90>
 ```
 
 ```python
@@ -86,7 +86,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7fcb55a93c18>
+<graphviz.files.Source at 0x7f2fb9d66c18>
 ```
 
 # Generalizing
@@ -102,7 +102,55 @@ C⋅kₓ ⋅k_y⋅Ψ
 ```
 
 ```python
->>> split_factors(subexpr)
-⎛     2       ⎞
-⎝C, kₓ ⋅k_y, Ψ⎠
+>>> split_factors(subexpr)[1]
+  2    
+kₓ ⋅k_y
+```
+
+# checking powers
+yeah, maybe this should be done when split is being done?
+
+```python
+>>> operator = split_factors(subexpr)[1]; operator
+  2    
+kₓ ⋅k_y
+```
+
+```python
+>>> def get_powers(expr):
+...     gens = [sympy.Symbol(s.name) for s in momentum_operators]
+...     subs = {c: n for c,n in zip(momentum_operators, gens)}
+...
+...     expr = sympy.poly(operator.subs(subs), gens)
+...     monomials = [(power, coef)
+...         for power, coef in zip(expr.monoms(), expr.coeffs())]
+...
+...     if len(monomials) != 1:
+...         raise ValueError('Momentum operator is not built from simple Mul-s.')
+...
+...     powers, coef = monomials[0]
+...     if coef != 1:
+...         raise ValueError('Momentum operator contains sth except momentum operators.')
+...
+...     return powers
+```
+
+```python
+>>> test_operators = [kx, kx**2, ky, kz, kx*ky, kx**2*ky, 2*kx, kx+ky]
+```
+
+```python
+>>> for operator in test_operators:
+...     try:
+...         print(get_powers(operator), 'from operator', operator)
+...     except ValueError:
+...         print('Error on', operator)
+(1, 0, 0) from operator k_x
+(2, 0, 0) from operator k_x**2
+(0, 1, 0) from operator k_y
+(0, 0, 1) from operator k_z
+(1, 1, 0) from operator k_x*k_y
+(2, 1, 0) from operator k_x**2*k_y
+Error on 2*k_x
+Error on k_x + k_y
 ```
