@@ -48,7 +48,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> derivate(expr, (1, 0, 0))
   - -0.5⋅ⅈ⋅B(-a + x, y, z)⋅C⋅A(-a + x, y, z)    0.5⋅ⅈ⋅B(a + x, y, z)⋅C⋅A(a + x
 - ─────────────────────────────────────────── + ──────────────────────────────
-                       a                                          a           
+                       a                                          a
 
 , y, z)
 ───────
@@ -70,6 +70,68 @@ First idea may be to:
 ```
 
 ```python
+>>> expr = expr = kx*A*kx*Psi
+>>> expr = substitute_functions(expr, ['A', 'Psi']); expr
+kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z)
+```
+
+```python
+>>> def recursive(expr):
+...     print(expr)
+...     expr = sympy.expand(expr)
+...
+...     def do_stuff(expr):
+...         lhs, operators, rhs = split_factors(expr)
+...         if lhs == 1:
+...             return derivate(rhs, get_powers(operators))
+...         else:
+...             return recursive(lhs*derivate(rhs, get_powers(operators)))
+...
+...     if expr.func == sympy.Mul:
+...         return do_stuff(expr)
+...
+...     elif expr.func == sympy.Add:
+...         return do_stuff(expr.args[-1]) + recursive(sympy.Add(*expr.args[:-1]))
+...
+...     else:
+...         raise ValueError('Incorrect input', expr)
+```
+
+```python
+>>> recursive(expr)
+C*k_x**2*k_y*Psi + k_x*A*k_x*Psi + k_z*Psi
+0
+```
+
+```python
+
+```
+
+```python
+>>> def rec_sum(x):
+...     if len(x) == 1:
+...         return x[0]
+...     else:
+...         return x[-1] + rec_sum(x[:-1])
+```
+
+```python
+>>> x = list(range(10))
+```
+
+```python
+>>> sum(x)
+45
+```
+
+```python
+>>> rec_sum(x)
+45
+```
+
+# Playing around
+
+```python
 >>> expr = kx*A*kx + C * kx**2 * ky + kz
 >>> expr = expr * Psi
 >>> expr = sympy.expand(expr); expr
@@ -79,7 +141,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f7a7029aa58>
+<graphviz.files.Source at 0x7f7a700a74a8>
 ```
 
 # Generalizing
@@ -90,6 +152,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> output = []
+>>> expr = sympy.expand(expr)
 >>> for subexpr in expr.args:
 ...     output.append(split_factors(subexpr))
 ```
