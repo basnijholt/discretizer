@@ -17,7 +17,10 @@
 >>> printing.init_printing(use_latex='mathjax')
 ...
 >>> from discretizer import coord, momentum_operators, a
->>> from discretizer import substitute_functions, derivate
+>>> from discretizer import substitute_functions
+>>> from discretizer import derivate
+>>> from discretizer import split_factors
+>>> from discretizer import get_powers
 ```
 
 ## Defining input expression
@@ -48,7 +51,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> derivate(expr, (1, 0, 0))
   - -0.5⋅ⅈ⋅B(-a + x, y, z)⋅C⋅A(-a + x, y, z)    0.5⋅ⅈ⋅B(a + x, y, z)⋅C⋅A(a + x
 - ─────────────────────────────────────────── + ──────────────────────────────
-                       a                                          a
+                       a                                          a           
 
 , y, z)
 ───────
@@ -99,34 +102,22 @@ kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z)
 
 ```python
 >>> recursive(expr)
-C*k_x**2*k_y*Psi + k_x*A*k_x*Psi + k_z*Psi
-0
-```
+k_x*A(x, y, z)*k_x*Psi(x, y, z)
+k_x*A(x, y, z)*(-0.5*I*Psi(-a + x, y, z)/a + 0.5*I*Psi(a + x, y, z)/a)
+-0.5*I*(-0.5*I*A(-a + x, y, z)*Psi(-2*a + x, y, z)/a + 0.5*I*A(a + x, y, z)*Psi(x, y, z)/a)/a
+0.25*A(a + x, y, z)*Psi(x, y, z)/a**2
+0.5*I*k_x*A(x, y, z)*Psi(a + x, y, z)/a
+0.5*I*(-0.5*I*A(-a + x, y, z)*Psi(x, y, z)/a + 0.5*I*A(a + x, y, z)*Psi(2*a + x, y, z)/a)/a
+0.25*A(-a + x, y, z)*Psi(x, y, z)/a**2
+0.25⋅A(-a + x, y, z)⋅Ψ(x, y, z)   - -0.25⋅A(-a + x, y, z)⋅Ψ(-2⋅a + x, y, z)   
+─────────────────────────────── - ────────────────────────────────────────── +
+                2                                      2                      
+               a                                      a                       
 
-```python
-
-```
-
-```python
->>> def rec_sum(x):
-...     if len(x) == 1:
-...         return x[0]
-...     else:
-...         return x[-1] + rec_sum(x[:-1])
-```
-
-```python
->>> x = list(range(10))
-```
-
-```python
->>> sum(x)
-45
-```
-
-```python
->>> rec_sum(x)
-45
+ 0.25⋅A(a + x, y, z)⋅Ψ(x, y, z)   - -0.25⋅A(a + x, y, z)⋅Ψ(2⋅a + x, y, z) 
+ ────────────────────────────── - ────────────────────────────────────────
+                2                                     2                   
+               a                                     a
 ```
 
 # Playing around
@@ -141,14 +132,10 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f7a700a74a8>
+<graphviz.files.Source at 0x7ff77c581fd0>
 ```
 
 # Generalizing
-
-```python
->>> from discretizer import split_factors
-```
 
 ```python
 >>> output = []
@@ -197,4 +184,8 @@ kₓ
 (2, 1, 0) from operator k_x**2*k_y
 Error on 2*k_x
 Error on k_x + k_y
+```
+
+```python
+
 ```
