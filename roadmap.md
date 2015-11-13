@@ -1,3 +1,4 @@
+
 # Roadmap of module
 
 Maybe different name of this file?
@@ -48,7 +49,9 @@ We should also allow to specify which parameters are constants
 * check how Anton generate valid kwant functions
 
 # Magnetic field through vector potential
-This should be done by a Peierls substitution. This requires modifying hoppings. I (Rafal) believe it should be done by a post processing once all hoppings are defined (at least as a associated list: direction: value(function)).
+This will go into separate module. Check issue 19.
+
+
 
 ```python
 
