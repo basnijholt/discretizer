@@ -1,12 +1,8 @@
 ## Assumptions
 * space_dependent - these are cast to functions, not commutative
-
 * momentum_symbols - will be specified (default to kx, ky, kz probably) and not commutative
-
 * constant - commutative, everything else
-
 * coordinates are always create as symbol with commutative=False
-
 * lattice constant is always a
 
 ```python
@@ -54,7 +50,15 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 ───────
 ```
 
-# Walking sympy tree
+# Designing recursive algorithm
+We must somehow handle this expression recursively
+First idea may be to:
+1. Expand intput expression to obtain Add-s of Mul-s
+2. For every summand do:
+    * split into lhs, operators, rhs
+    * calculate derivative
+    * pass it as input to 1.
+3. gather stuff together
 
 ```python
 >>> from sympy.printing.dot import dotprint
@@ -71,7 +75,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> expr = kx*A*kx + C * kx**2 * ky
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7f631fde9a58>
+<graphviz.files.Source at 0x7fcb55a8ca58>
 ```
 
 ```python
@@ -82,33 +86,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f631fdebc50>
-```
-
-```python
->>> for subexpr in expr.args:
-...     print("Testing: '{}'".format(subexpr))
-...     for arg in subexpr.args[::-1]:
-...         if arg in momentum_operators:
-...             print('\t', arg, True)
-...
-...         elif arg.func == sympy.Pow and arg.args[0] in momentum_operators:
-...                 print('\t', arg, True)
-...         else:
-...             print('\t', arg, False)
-...
-...     print()
-Testing: 'C*k_x**2*k_y*Psi'
-	 Psi False
-	 k_y True
-	 k_x**2 True
-	 C False
-
-Testing: 'k_x*A*k_x*Psi'
-	 Psi False
-	 k_x True
-	 A False
-	 k_x True
+<graphviz.files.Source at 0x7fcb55a93c18>
 ```
 
 # Generalizing
@@ -127,8 +105,4 @@ C⋅kₓ ⋅k_y⋅Ψ
 >>> split_factors(subexpr)
 ⎛     2       ⎞
 ⎝C, kₓ ⋅k_y, Ψ⎠
-```
-
-```python
-
 ```
