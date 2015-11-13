@@ -139,3 +139,34 @@ def split_factors(expr):
     output = tuple(sympy.Mul(*output[key][::-1])
                    for key in ['lhs', 'operators', 'rhs'])
     return output
+
+
+def get_powers(expr):
+    """ Read powers of momentum operators.
+
+    Parameters:
+    -----------
+    expr : sympy expression
+       Expression that is built of momentum operators, e.g. `k_x**2 * k_y`.
+
+    Returns:
+    --------
+    powers : tuple
+        Tuple of momentum powers, e.g. `k_x**2 * k_y` would return `(2, 1, 0)`.
+    """
+
+    gens = [sympy.Symbol(s.name) for s in momentum_operators]
+    subs = {c: n for c,n in zip(momentum_operators, gens)}
+
+    expr = sympy.poly(expr.subs(subs), gens)
+    monomials = [(power, coef)
+        for power, coef in zip(expr.monoms(), expr.coeffs())]
+
+    if len(monomials) != 1:
+        raise ValueError('Momentum operator is not built from simple Mul-s.')
+
+    powers, coef = monomials[0]
+    if coef != 1:
+        raise ValueError('Momentum operator contains sth except momentum operators.')
+
+    return powers
