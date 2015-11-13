@@ -118,11 +118,14 @@ def split_factors(expr):
 
     iterator = iter(expr.args[::-1])
     for factor in iterator:
-        if factor not in momentum_operators:
-            output['rhs'].append(factor)
-        else:
+        if factor in momentum_operators:
             output['operators'].append(factor)
             break
+        elif factor.func == sympy.Pow and factor.args[0] in momentum_operators:
+            output['operators'].append(factor)
+            break
+        else:
+            output['rhs'].append(factor)
 
     for factor in iterator:
         if factor in momentum_operators:
