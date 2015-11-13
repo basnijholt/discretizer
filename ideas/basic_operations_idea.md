@@ -50,15 +50,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 ───────
 ```
 
-# Designing recursive algorithm
-We must somehow handle this expression recursively
-First idea may be to:
-1. Expand intput expression to obtain Add-s of Mul-s
-2. For every summand do:
-    * split into lhs, operators, rhs
-    * calculate derivative
-    * pass it as input to 1.
-3. gather stuff together
+# expanding
 
 ```python
 >>> from sympy.printing.dot import dotprint
@@ -72,39 +64,45 @@ First idea may be to:
 ```
 
 ```python
->>> expr = kx*A*kx + C * kx**2 * ky
+>>> expr = kx*A*kx + C * kx**2 * ky + kz
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7f7f3c085b38>
+<graphviz.files.Source at 0x7f96b0058dd8>
 ```
 
 ```python
 >>> expr = sympy.expand(expr); expr
-    2                  
-C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ
+    2                          
+C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_z⋅Ψ
 ```
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f7f3c08dc88>
+<graphviz.files.Source at 0x7f96b005de10>
 ```
 
-# Generalizing
+# spliting into lhs, operators, rhs
 
 ```python
 >>> from discretizer import split_factors
 ```
 
 ```python
->>> subexpr = expr.args[0]; subexpr
-    2      
-C⋅kₓ ⋅k_y⋅Ψ
+>>> output = []
+>>> for subexpr in expr.args:
+...     output.append(split_factors(subexpr))
 ```
 
 ```python
->>> split_factors(subexpr)[1]
-  2    
-kₓ ⋅k_y
+>>> expr.args
+⎛           2                 ⎞
+⎝k_z⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, kₓ⋅A⋅kₓ⋅Ψ⎠
+```
+
+```python
+>>> output
+⎡             ⎛     2       ⎞               ⎤
+⎣(1, k_z, Ψ), ⎝C, kₓ ⋅k_y, Ψ⎠, (kₓ⋅A, kₓ, Ψ)⎦
 ```
 
 # checking powers
