@@ -68,74 +68,83 @@ First idea may be to:
 3. gather stuff together
 
 ```python
+>>> from discretizer import recursive
+```
+
+```python
 >>> kx, ky, kz = momentum_operators
->>> Psi = sympy.Symbol('Psi', commutative=False) #sympy.Function('Psi')(*coord)
+>>> Psi = sympy.Function('Psi')(*coord)
+>>> A = sympy.Function('A')(*coord)
 ```
 
 ```python
->>> expr = expr = kx*A*kx*Psi
->>> expr = substitute_functions(expr, ['A', 'Psi']); expr
-kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z)
+>>> expr = expr = kx*A*kx*Psi + kx*Psi#+ kz**8*kx*ky*A*kx*Psi + ky**3*kx*ky*A*kx*Psi
+>>> expr
+kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z) + kₓ⋅Ψ(x, y, z)
 ```
 
 ```python
->>> def recursive(expr):
-...     print(expr)
-...     expr = sympy.expand(expr)
-...
-...     def do_stuff(expr):
-...         lhs, operators, rhs = split_factors(expr)
-...         if lhs == 1:
-...             return derivate(rhs, get_powers(operators))
-...         else:
-...             return recursive(lhs*derivate(rhs, get_powers(operators)))
-...
-...     if expr.func == sympy.Mul:
-...         return do_stuff(expr)
-...
-...     elif expr.func == sympy.Add:
-...         return do_stuff(expr.args[-1]) + recursive(sympy.Add(*expr.args[:-1]))
-...
-...     else:
-...         raise ValueError('Incorrect input', expr)
+>>> %time recursive(expr)
+CPU times: user 32 ms, sys: 4 ms, total: 36 ms
+Wall time: 36.3 ms
+  - -0.5⋅ⅈ⋅Ψ(-a + x, y, z)    0.5⋅ⅈ⋅Ψ(a + x, y, z)   0.25⋅A(-a + x, y, z)⋅Ψ(x,
+- ───────────────────────── + ──────────────────── + ─────────────────────────
+              a                        a                             2        
+                                                                    a         
+
+ y, z)   - -0.25⋅A(-a + x, y, z)⋅Ψ(-2⋅a + x, y, z)    0.25⋅A(a + x, y, z)⋅Ψ(x,
+────── - ────────────────────────────────────────── + ────────────────────────
+                              2                                      2        
+                             a                                      a         
+
+ y, z)   - -0.25⋅A(a + x, y, z)⋅Ψ(2⋅a + x, y, z) 
+────── - ────────────────────────────────────────
+                             2                   
+                            a
+```
+
+# Test
+
+```python
+>>> from discretizer import tb_coefs_1d
 ```
 
 ```python
->>> recursive(expr)
-k_x*A(x, y, z)*k_x*Psi(x, y, z)
-k_x*A(x, y, z)*(-0.5*I*Psi(-a + x, y, z)/a + 0.5*I*Psi(a + x, y, z)/a)
--0.5*I*(-0.5*I*A(-a + x, y, z)*Psi(-2*a + x, y, z)/a + 0.5*I*A(a + x, y, z)*Psi(x, y, z)/a)/a
-0.25*A(a + x, y, z)*Psi(x, y, z)/a**2
-0.5*I*k_x*A(x, y, z)*Psi(a + x, y, z)/a
-0.5*I*(-0.5*I*A(-a + x, y, z)*Psi(x, y, z)/a + 0.5*I*A(a + x, y, z)*Psi(2*a + x, y, z)/a)/a
-0.25*A(-a + x, y, z)*Psi(x, y, z)/a**2
-0.25⋅A(-a + x, y, z)⋅Ψ(x, y, z)   - -0.25⋅A(-a + x, y, z)⋅Ψ(-2⋅a + x, y, z)   
-─────────────────────────────── - ────────────────────────────────────────── +
-                2                                      2                      
-               a                                      a                       
+>>> n = 3
+```
 
- 0.25⋅A(a + x, y, z)⋅Ψ(x, y, z)   - -0.25⋅A(a + x, y, z)⋅Ψ(2⋅a + x, y, z) 
- ────────────────────────────── - ────────────────────────────────────────
-                2                                     2                   
-               a                                     a
+```python
+>>> tb_coefs_1d(n)
+⎡-0.5⋅ⅈ   1.0⋅ⅈ     -1.0⋅ⅈ   0.5⋅ⅈ⎤
+⎢───────, ─────, 0, ───────, ─────⎥
+⎢    3       3          3       3 ⎥
+⎣   a       a          a       a  ⎦
+```
+
+```python
+>>> recursive(kx**n*Psi)
+0.5⋅ⅈ⋅Ψ(-2⋅a + x, y, z)   - -1.0⋅ⅈ⋅Ψ(-a + x, y, z)    1.0⋅ⅈ⋅Ψ(a + x, y, z)   -
+─────────────────────── - ───────────────────────── + ──────────────────── - ─
+            3                          3                        3             
+           a                          a                        a              
+
+ -0.5⋅ⅈ⋅Ψ(2⋅a + x, y, z) 
+─────────────────────────
+            3            
+           a
 ```
 
 # Playing around
 
 ```python
->>> expr = kx*A*kx + C * kx**2 * ky + kz
+>>> expr = kx*A*kx + C * kx**2 * ky
 >>> expr = expr * Psi
 >>> expr = sympy.expand(expr); expr
-    2                          
-C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_z⋅Ψ
+    2                                             
+C⋅kₓ ⋅k_y⋅Ψ(x, y, z) + kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z)
 ```
 
-```python
->>> graph(expr)
-<graphviz.files.Source at 0x7ff77c581fd0>
-```
-
-# Generalizing
+# Testing split_function
 
 ```python
 >>> output = []
@@ -145,15 +154,39 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_z⋅Ψ
 ```
 
 ```python
->>> expr.args
-⎛           2                 ⎞
-⎝k_z⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, kₓ⋅A⋅kₓ⋅Ψ⎠
+>>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, Psi]
+...
+>>> tested = []
+>>> output = []
+>>> for operator in test_operators:
+...     try:
+...         output.append(split_factors(operator))
+...         tested.append(operator)
+...     except ValueError:
+...         print('ValueError on', operator)
+...     except AssertionError:
+...         print('AssertionError on', operator, operator.func)
+AssertionError on k_x <class 'sympy.core.symbol.Symbol'>
+AssertionError on k_x**2 <class 'sympy.core.power.Pow'>
+AssertionError on Psi(x, y, z) Psi
+```
+
+```python
+>>> tested
+⎡                    2                 2                                      
+⎣k_z⋅Ψ(x, y, z), C⋅kₓ ⋅Ψ(x, y, z), C⋅kₓ ⋅k_y⋅Ψ(x, y, z), k_y⋅A(x, y, z)⋅kₓ⋅B⋅Ψ
+
+         ⎤
+(x, y, z)⎦
 ```
 
 ```python
 >>> output
-⎡             ⎛     2       ⎞               ⎤
-⎣(1, k_z, Ψ), ⎝C, kₓ ⋅k_y, Ψ⎠, (kₓ⋅A, kₓ, Ψ)⎦
+⎡                      ⎛     2            ⎞  ⎛     2                ⎞         
+⎣(1, k_z, Ψ(x, y, z)), ⎝C, kₓ , Ψ(x, y, z)⎠, ⎝C, kₓ ⋅k_y, Ψ(x, y, z)⎠, (k_y⋅A(
+
+                           ⎤
+x, y, z), kₓ, B⋅Ψ(x, y, z))⎦
 ```
 
 # checking powers
@@ -184,8 +217,4 @@ kₓ
 (2, 1, 0) from operator k_x**2*k_y
 Error on 2*k_x
 Error on k_x + k_y
-```
-
-```python
-
 ```

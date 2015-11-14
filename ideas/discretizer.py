@@ -60,6 +60,7 @@ coord = sympy.symbols('x y z', commutative=False)
 momentum_operators = sympy.symbols('k_x k_y k_z', commutative=False)
 a = sympy.Symbol('a')
 
+
 def substitute_functions(expr, space_dependent=[]):
     """ Substitute space_dependent symbols with function of (x, y, z) """
     symbols = [s for s in expr.atoms(sympy.Symbol) if s.name in space_dependent]
@@ -77,7 +78,7 @@ def derivate(expression, k_powers):
         Valid sympy expression containing functions to to be derivated
     k_powers : list of integers
        List with powers of momenta in each direction, e.g. `k_x**2 * k_y` would
-       correspond to `(2, 1)`.
+       correspond to `(2, 1, 0)`.
 
     Returns:
     --------
@@ -173,3 +174,27 @@ def get_powers(expr):
         raise ValueError('Momentum operator contains sth except momentum operators.')
 
     return powers
+
+
+def recursive(expr):
+    """ Recursive derivation.
+
+    Function moved out of notebook because Sebastian wants to work on it.
+    """
+    expr = sympy.expand(expr)
+
+    def do_stuff(expr):
+        lhs, operators, rhs = split_factors(expr)
+        if lhs == 1:
+            return derivate(rhs, get_powers(operators))
+        else:
+            return recursive(lhs*derivate(rhs, get_powers(operators)))
+
+    if expr.func == sympy.Mul:
+        return do_stuff(expr)
+
+    elif expr.func == sympy.Add:
+        return do_stuff(expr.args[-1]) + recursive(sympy.Add(*expr.args[:-1]))
+
+    else:
+        raise ValueError('Incorrect input', expr)
