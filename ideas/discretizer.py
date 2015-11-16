@@ -198,3 +198,75 @@ def recursive(expr):
 
     else:
         raise ValueError('Incorrect input', expr)
+        
+
+# ****** extracring hoppings ***********
+def Psi_to_hopping(Psi):
+    offset = []
+    for argument in Psi.args:
+        temp = sympy.expand(argument)
+        if temp in sympy.symbols('x y z', commutative = False):
+            offset.append(0)
+        elif temp.func == sympy.Add:
+            for arg_summands in temp.args:
+                if arg_summands.func == sympy.Mul:
+                    if len(arg_summands.args) > 2:
+                        print('More than two factors in an argument of Psi')
+                    if not arg_summands.args[0] == sympy.symbols('a'):
+                        offset.append(arg_summands.args[0])
+                    else:
+                        offset.append(arg_summands.args[1])
+                elif arg_summands == a:
+                    offset.append(1)
+        else:
+            print('Argument of \Psi is neither a sum nor a single space variable.')
+    return tuple(offset)
+
+
+# This function will not have the shortening included
+def extract_hoppings(expr):
+    # this line should be unneccessary in the long run. Now I want to avoid errors due to wrong formats of the input.
+    expr = sympy.expand(expr)
+
+    # The output will be stored in a dictionary, with terms for each hopping kind
+    # This format is probably not good in the long run
+    hoppings = {}
+
+    if expr.func == sympy.Add:
+        for summand in expr.args:
+            #find a way to make it readable
+            if not summand.func == sympy.Function('Psi'):
+                for i in range(len(summand.args)):
+                    if summand.args[i].func == sympy.Function('Psi'):
+                        index = i
+                if index < len(summand.args) - 1:
+                    print('Psi is not in the very end of the term. Output will be wrong!')
+
+                try:
+                    hoppings[Psi_to_hopping(summand.args[-1])] += sympy.Mul(summand.args[:-1])
+                except:
+                    hoppings[Psi_to_hopping(summand.args[-1])] = sympy.Mul(summand.args[:-1])
+            else:
+                try:
+                    hoppings[Psi_to_hopping(summand)] += 1
+                except:
+                    hoppings[Psi_to_hopping(summand)] = 1
+
+    else:
+        if not expr.func == sympy.Function('Psi'):
+            for i in range(len(expr.args)):
+                if expr.args[i].func == sympy.Function('Psi'):
+                    index = i
+            if index < len(expr.args) - 1:
+                print('Psi is not in the very end of the term. Output will be wrong!')
+
+            try:
+                hoppings[Psi_to_hopping(expr.args[-1])] += sympy.Mul(expr.args[:-1])
+            except:
+                hoppings[Psi_to_hopping(expr.args[-1])] = sympy.Mul(expr.args[:-1])
+        else:
+            try:
+                hoppings[Psi_to_hopping(expr)] += 1
+            except:
+                hoppings[Psi_to_hopping(expr)] = 1
+    return hoppings
