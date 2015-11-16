@@ -36,7 +36,8 @@ def derivate(expression, operator):
     --------
     expression : derivate of input expression
     """
-    assert operator in momentum_operators, "Operator '{}' unkown.".format(operator)
+    assert operator in momentum_operators, \
+            "Operator '{}' does not belong to [kx, ky, kz].".format(operator)
     ind = momentum_operators.index(operator)
 
     expr1 = expression.subs(coord[ind], coord[ind] + lattice_constants[ind])
