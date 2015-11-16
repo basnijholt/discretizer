@@ -38,12 +38,15 @@ def derivate(expression, operator):
     """
     assert operator in momentum_operators, \
             "Operator '{}' does not belong to [kx, ky, kz].".format(operator)
-    ind = momentum_operators.index(operator)
 
-    expr1 = expression.subs(coord[ind], coord[ind] + lattice_constants[ind])
-    expr2 = expression.subs(coord[ind], coord[ind] - lattice_constants[ind])
-    output = (expr1 - expr2) / 2 / lattice_constants[ind]
-    return -sympy.I * sympy.expand(output)
+    if isinstance(expression, (int, float)):
+        return 0
+    else:
+        ind = momentum_operators.index(operator)
+        expr1 = expression.subs(coord[ind], coord[ind] + lattice_constants[ind])
+        expr2 = expression.subs(coord[ind], coord[ind] - lattice_constants[ind])
+        output = (expr1 - expr2) / 2 / lattice_constants[ind]
+        return -sympy.I * sympy.expand(output)
 
 
 def split_factors(expression):

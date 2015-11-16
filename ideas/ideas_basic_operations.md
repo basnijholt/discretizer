@@ -45,9 +45,9 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 
 ```python
 >>> derivate(expr, kx)
-  B(-aₓ + x, y, z)⋅C⋅A(-aₓ + x, y, z)   B(aₓ + x, y, z)⋅C⋅A(aₓ + x, y, z)
-- ─────────────────────────────────── + ─────────────────────────────────
-                  2⋅aₓ                                 2⋅aₓ
+   ⎛  B(-aₓ + x, y, z)⋅C⋅A(-aₓ + x, y, z)   B(aₓ + x, y, z)⋅C⋅A(aₓ + x, y, z)⎞
+-ⅈ⋅⎜- ─────────────────────────────────── + ─────────────────────────────────⎟
+   ⎝                  2⋅aₓ                                 2⋅aₓ              ⎠
 ```
 
 # expanding
@@ -67,7 +67,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7ff558088f98>
+<graphviz.files.Source at 0x7f6c300eda58>
 ```
 
 ```python
@@ -78,7 +78,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7ff558042e48>
+<graphviz.files.Source at 0x7f6c300f94e0>
 ```
 
 # spliting into lhs, operators, rhs
@@ -109,8 +109,8 @@ AssertionError on Psi <class 'sympy.core.symbol.Symbol'>
 
 ```python
 >>> expr.args
-⎛           2        2      2             ⎞
-⎝kₓ, k_z, kₓ , k_y⋅kₓ , C⋅kₓ ⋅k_y, kₓ⋅A⋅kₓ⎠
+⎛             2        2                 ⎞
+⎝k_z⋅Ψ, k_y⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, kₓ⋅A⋅kₓ⋅Ψ⎠
 ```
 
 ```python
