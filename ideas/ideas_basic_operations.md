@@ -67,7 +67,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7f6c300eda58>
+<graphviz.files.Source at 0x7f69595a1a90>
 ```
 
 ```python
@@ -78,7 +78,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f6c300f94e0>
+<graphviz.files.Source at 0x7f69595ab518>
 ```
 
 # spliting into lhs, operators, rhs
@@ -102,21 +102,21 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ...         print('ValueError on', operator)
 ...     except AssertionError:
 ...         print('AssertionError on', operator, operator.func)
-AssertionError on k_x <class 'sympy.core.symbol.Symbol'>
-AssertionError on k_x**2 <class 'sympy.core.power.Pow'>
-AssertionError on Psi <class 'sympy.core.symbol.Symbol'>
 ```
 
 ```python
->>> expr.args
-⎛             2        2                 ⎞
-⎝k_z⋅Ψ, k_y⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, kₓ⋅A⋅kₓ⋅Ψ⎠
+>>> tested
+⎡           2        2                            2   ⎤
+⎣k_z⋅Ψ, C⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, k_y⋅A⋅kₓ⋅B⋅Ψ, kₓ, kₓ , Ψ⎦
 ```
 
 ```python
 >>> output
-⎡                            ⎛    2        ⎞                  ⎤
-⎣(1, k_z, Ψ), (C⋅kₓ, kₓ, Ψ), ⎝C⋅kₓ , k_y, Ψ⎠, (k_y⋅A, kₓ, B⋅Ψ)⎦
+⎡                            ⎛    2        ⎞                                  
+⎣(1, k_z, Ψ), (C⋅kₓ, kₓ, Ψ), ⎝C⋅kₓ , k_y, Ψ⎠, (k_y⋅A, kₓ, B⋅Ψ), (1, kₓ, 1), (k
+
+                    ⎤
+ₓ, kₓ, 1), (1, 1, Ψ)⎦
 ```
 
 ```python

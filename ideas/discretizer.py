@@ -70,25 +70,36 @@ def split_factors(expression):
         part of expression that is derivated in current step
 
     """
-    assert isinstance(expression, sympy.Mul), 'input expression is not sympy.Mul'
-    output = {'rhs': [], 'operator': [], 'lhs': []}
+    assert not isinstance(expression, sympy.Add), 'input expression must not be sympy.Add'
+    output = {'rhs': [1], 'operator': [1], 'lhs': [1]}
 
-    iterator = iter(expression.args[::-1])
-    for factor in iterator:
-        if factor in momentum_operators:
-            output['operator'].append(factor)
-            break
-        elif factor.func == sympy.Pow and factor.args[0] in momentum_operators:
-            operator = factor.args[0]
-            power = factor.args[1]
-            output['operator'].append(operator)
-            output['lhs'].append(sympy.Pow(operator, power-1))
-            break
+    if isinstance(expression, sympy.Pow):
+        output['operator'].append(expression.args[0])
+        output['lhs'].append(sympy.Pow(expression.args[0], expression.args[1]-1))
+
+    elif isinstance(expression, sympy.Symbol):
+        if expression in momentum_operators:
+            output['operator'].append(expression)
         else:
-            output['rhs'].append(factor)
+            output['rhs'].append(expression)
 
-    for factor in iterator:
-        output['lhs'].append(factor)
+    elif isinstance(expression, sympy.Mul):
+        iterator = iter(expression.args[::-1])
+        for factor in iterator:
+            if factor in momentum_operators:
+                output['operator'].append(factor)
+                break
+            elif factor.func == sympy.Pow and factor.args[0] in momentum_operators:
+                operator = factor.args[0]
+                power = factor.args[1]
+                output['operator'].append(operator)
+                output['lhs'].append(sympy.Pow(operator, power-1))
+                break
+            else:
+                output['rhs'].append(factor)
+
+        for factor in iterator:
+            output['lhs'].append(factor)
 
     output = tuple(sympy.Mul(*output[key][::-1])
                    for key in ['lhs', 'operator', 'rhs'])
