@@ -77,7 +77,7 @@ def split_factors(expression):
         output['operator'].append(expression.args[0])
         output['lhs'].append(sympy.Pow(expression.args[0], expression.args[1]-1))
 
-    elif isinstance(expression, sympy.Symbol):
+    elif isinstance(expression, (sympy.Symbol, sympy.Function)):
         if expression in momentum_operators:
             output['operator'].append(expression)
         else:
@@ -106,14 +106,17 @@ def split_factors(expression):
     return output
 
 
-def recursive(expr):
-    """ Recursive derivation.
-
-    Function moved out of notebook because Sebastian wants to work on it.
-    """
-    expr = sympy.expand(expr)
+def discretize_summand(summand):
+    """ Discretize one summand. """
+    assert not isinstance(summand, sympy.Add), "Input should be one summand."
 
     def do_stuff(expr):
+        """ Derivate expr recursively. """
+        expr = sympy.expand(expr)
+
+        if isinstance(expr, sympy.Add):
+            return do_stuff(expr.args[-1]) + do_stuff(sympy.Add(*expr.args[:-1]))
+
         lhs, operator, rhs = split_factors(expr)
         if rhs == 1 and operator != 1:
             return 0
@@ -122,16 +125,29 @@ def recursive(expr):
         elif lhs == 1:
             return derivate(rhs, operator)
         else:
-            return recursive(lhs*derivate(rhs, operator))
+            return do_stuff(lhs*derivate(rhs, operator))
 
-    if expr.func == sympy.Mul:
-        return do_stuff(expr)
+    return do_stuff(summand)
 
-    elif expr.func == sympy.Add:
-        return do_stuff(expr.args[-1]) + recursive(sympy.Add(*expr.args[:-1]))
 
+def discretize_expression(expression):
+    """ Discretize expression.
+
+    Recursive derivation implemented in discretize_summand is applied
+    on every summand. Shortening should be applied before return on output.
+    """
+    expression = sympy.expand(expression)
+
+    if expression.func == sympy.Add:
+        summands = expression.args
     else:
-        raise ValueError('Incorrect input', expr)
+        summands = [expression]
+
+    output = []
+    for summand in summands:
+        output.append(discretize_summand(summand))
+
+    return sympy.expand(sympy.Add(*output))
 
 
 # ****** extracring hoppings ***********

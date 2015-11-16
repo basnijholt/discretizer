@@ -1,4 +1,6 @@
 ## Assumptions
+(must be updated)
+
 * space_dependent - these are cast to functions, not commutative
 * momentum_symbols - will be specified (default to kx, ky, kz probably) and not commutative
 * constant - commutative, everything else
@@ -67,7 +69,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7f69595a1a90>
+<graphviz.files.Source at 0x7f2f5f91ea90>
 ```
 
 ```python
@@ -78,7 +80,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f69595ab518>
+<graphviz.files.Source at 0x7f2f5f92a518>
 ```
 
 # spliting into lhs, operators, rhs
@@ -90,7 +92,8 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ```
 
 ```python
->>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, Psi]
+>>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, Psi,
+...                   Psi(*coord)]
 ...
 >>> tested = []
 >>> output = []
@@ -106,8 +109,8 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> tested
-⎡           2        2                            2   ⎤
-⎣k_z⋅Ψ, C⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, k_y⋅A⋅kₓ⋅B⋅Ψ, kₓ, kₓ , Ψ⎦
+⎡           2        2                            2               ⎤
+⎣k_z⋅Ψ, C⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, k_y⋅A⋅kₓ⋅B⋅Ψ, kₓ, kₓ , Ψ, Ψ(x, y, z)⎦
 ```
 
 ```python
@@ -115,10 +118,6 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ⎡                            ⎛    2        ⎞                                  
 ⎣(1, k_z, Ψ), (C⋅kₓ, kₓ, Ψ), ⎝C⋅kₓ , k_y, Ψ⎠, (k_y⋅A, kₓ, B⋅Ψ), (1, kₓ, 1), (k
 
-                    ⎤
-ₓ, kₓ, 1), (1, 1, Ψ)⎦
-```
-
-```python
-
+                                        ⎤
+ₓ, kₓ, 1), (1, 1, Ψ), (1, 1, Ψ(x, y, z))⎦
 ```
