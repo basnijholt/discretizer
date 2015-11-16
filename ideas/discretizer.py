@@ -42,7 +42,7 @@ def derivate(expression, operator):
     expr1 = expression.subs(coord[ind], coord[ind] + lattice_constants[ind])
     expr2 = expression.subs(coord[ind], coord[ind] - lattice_constants[ind])
     output = (expr1 - expr2) / 2 / lattice_constants[ind]
-    return sympy.expand(output)
+    return -sympy.I * sympy.expand(output)
 
 
 def split_factors(expression):
