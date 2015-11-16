@@ -14,20 +14,6 @@ dictitems:
     nbconvert_exporter: python
     pygments_lexer: ipython2
     version: 2.7.6
-kernelspec:
-  display_name: dev2
-  language: python2
-  name: dev2
-language_info:
-  codemirror_mode:
-    name: ipython
-    version: 2
-  file_extension: .py
-  mimetype: text/x-python
-  name: python
-  nbconvert_exporter: python
-  pygments_lexer: ipython2
-  version: 2.7.6
 state:
   _allownew: true
 ---
@@ -47,8 +33,7 @@ state:
 >>> from discretizer import substitute_functions
 >>> from discretizer import derivate
 >>> from discretizer import split_factors
->>> from discretizer import get_powers
->>> from discretizer import recursive
+>>> from discretizer import discretize_expression
 ```
 
 ```python
@@ -60,41 +45,39 @@ state:
 # Possible inputs to hopping functions as outputs from discretization
 
 ```python
->>> recursive(kx*A*kx*Psi)
-0.25⋅A(-a + x, y, z)⋅Ψ(x, y, z)   - -0.25⋅A(-a + x, y, z)⋅Ψ(-2⋅a + x, y, z)   
-─────────────────────────────── - ────────────────────────────────────────── +
-                2                                      2                      
-               a                                      a                       
+>>> discretize_expression(kx*A*kx*Psi)
+A(-aₓ + x, y, z)⋅Ψ(x, y, z)   A(-aₓ + x, y, z)⋅Ψ(-2⋅aₓ + x, y, z)   A(aₓ + x, 
+─────────────────────────── - ─────────────────────────────────── + ──────────
+               2                                 2                            
+           4⋅aₓ                              4⋅aₓ                             
 
- 0.25⋅A(a + x, y, z)⋅Ψ(x, y, z)   - -0.25⋅A(a + x, y, z)⋅Ψ(2⋅a + x, y, z) 
- ────────────────────────────── - ────────────────────────────────────────
-                2                                     2                   
-               a                                     a
+y, z)⋅Ψ(x, y, z)   A(aₓ + x, y, z)⋅Ψ(2⋅aₓ + x, y, z)
+──────────────── - ─────────────────────────────────
+    2                                2              
+4⋅aₓ                             4⋅aₓ
 ```
 
 ```python
->>> recursive(kx*kx*Psi)
-2.0⋅Ψ(x, y, z)   - -1.0⋅Ψ(-a + x, y, z)    - -1.0⋅Ψ(a + x, y, z) 
-────────────── - ─────────────────────── - ──────────────────────
-       2                     2                        2          
-      a                     a                        a
+>>> discretize_expression(kx*kx*Psi)
+Ψ(x, y, z)   Ψ(-2⋅aₓ + x, y, z)   Ψ(2⋅aₓ + x, y, z)
+────────── - ────────────────── - ─────────────────
+      2                2                    2      
+  2⋅aₓ             4⋅aₓ                 4⋅aₓ
 ```
 
 ```python
->>> recursive(kx*ky*Psi)
-  - -0.25⋅Ψ(-a + x, -a + y, z)    0.25⋅Ψ(-a + x, a + y, z)   0.25⋅Ψ(a + x, -a 
-- ───────────────────────────── + ──────────────────────── + ─────────────────
-                 2                            2                          2    
-                a                            a                          a     
+>>> discretize_expression(kx*ky*Psi)
+  Ψ(-aₓ + x, -a_y + y, z)   Ψ(-aₓ + x, a_y + y, z)   Ψ(aₓ + x, -a_y + y, z)   
+- ─────────────────────── + ────────────────────── + ────────────────────── - 
+          4⋅aₓ⋅a_y                 4⋅aₓ⋅a_y                 4⋅aₓ⋅a_y          
 
-+ y, z)   - -0.25⋅Ψ(a + x, a + y, z) 
-─────── - ───────────────────────────
-                        2            
-                       a
+Ψ(aₓ + x, a_y + y, z)
+─────────────────────
+       4⋅aₓ⋅a_y
 ```
 
 ```python
->>> test = recursive( kx**2 * A * ky * Psi ) # yeah, I know it's not hermitian but it is only one summand
+>>> test = discretize_expression( kx**2 * A * ky * Psi ) # yeah, I know it's not hermitian but it is only one summand
 ```
 
 ```python
@@ -169,15 +152,10 @@ state:
 ```
 
 ```python
+>>> x, y, z = coord
 >>> single_term = Psi.subs(x, x+a).subs(y, y-2*a)
 >>> Psi_to_hopping(single_term)
 (1, -2, 0)
-```
-
-```python
->>> hop = extract_hoppings(expr)
->>> hop
-{(1, 0, 0): 1, (2, -2, 1): (A(x, y, z),)}
 ```
 
 ```python
@@ -185,6 +163,12 @@ state:
 >>> expr = A*expr.subs(x, x+2*a).subs(y, y-2*a).subs(z, z + a) + expr.subs(x, x + a)
 >>> expr
 A(x, y, z)⋅Ψ(2⋅a + x, -2⋅a + y, a + z) + Ψ(a + x, y, z)
+```
+
+```python
+>>> hop = extract_hoppings(expr)
+>>> hop
+{(1, 0, 0): 1, (2, -2, 1): (A(x, y, z),)}
 ```
 
 ```python
