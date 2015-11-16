@@ -7,8 +7,6 @@
 * writing tests, lot of tests (maybe wait till packaging)
 * making package
 * wrapper of string input (nice, but least on priorty)
-## Small stuff
-* fix split_function to work on every case (even if we don't use it)
 
 # Development guide
 
