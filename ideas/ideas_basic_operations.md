@@ -36,18 +36,18 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 ## Calculation derivation
 
 ```python
->>> expr
-D + B(x, y, z)⋅C⋅A(x, y, z)
+>>> lattice_constants = sympy.symbols('a_x a_y a_z', commutative=False)
 ```
 
 ```python
->>> derivate(expr, (1, 0, 0))
-  - -0.5⋅ⅈ⋅B(-a + x, y, z)⋅C⋅A(-a + x, y, z)    0.5⋅ⅈ⋅B(a + x, y, z)⋅C⋅A(a + x
-- ─────────────────────────────────────────── + ──────────────────────────────
-                       a                                          a           
+>>> kx, ky, kz = momentum_operators
+```
 
-, y, z)
-───────
+```python
+>>> derivate(expr, kx)
+  B(-aₓ + x, y, z)⋅C⋅A(-aₓ + x, y, z)   B(aₓ + x, y, z)⋅C⋅A(aₓ + x, y, z)
+- ─────────────────────────────────── + ─────────────────────────────────
+                  2⋅aₓ                                 2⋅aₓ
 ```
 
 # expanding
@@ -64,24 +64,26 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 ```
 
 ```python
->>> expr = kx*A*kx + C * kx**2 * ky + kz
+>>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7f96b0058dd8>
+<graphviz.files.Source at 0x7f6f09dbafd0>
 ```
 
 ```python
 >>> expr = sympy.expand(expr); expr
-    2                          
-C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_z⋅Ψ
+    2                           2          
+C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ```
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f96b005de10>
+<graphviz.files.Source at 0x7f6f09e0fe80>
 ```
 
 # spliting into lhs, operators, rhs
+
+## Check of function once it works
 
 ```python
 >>> from discretizer import split_factors
@@ -91,47 +93,14 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_z⋅Ψ
 >>> output = []
 >>> for subexpr in expr.args:
 ...     output.append(split_factors(subexpr))
-```
-
-```python
+...
 >>> expr.args
-⎛           2                 ⎞
-⎝k_z⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, kₓ⋅A⋅kₓ⋅Ψ⎠
+⎛             2        2                 ⎞
+⎝k_z⋅Ψ, k_y⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, kₓ⋅A⋅kₓ⋅Ψ⎠
 ```
 
 ```python
 >>> output
-⎡             ⎛     2       ⎞               ⎤
-⎣(1, k_z, Ψ), ⎝C, kₓ ⋅k_y, Ψ⎠, (kₓ⋅A, kₓ, Ψ)⎦
-```
-
-# checking powers
-yeah, maybe this should be done when split is being done?
-
-```python
->>> from discretizer import get_powers
-```
-
-```python
->>> operator = split_factors(subexpr)[1]; operator
-  2    
-kₓ ⋅k_y
-```
-
-```python
->>> test_operators = [kx, kx**2, ky, kz, kx*ky, kx**2*ky, 2*kx, kx+ky]
-...
->>> for operator in test_operators:
-...     try:
-...         print(get_powers(operator), 'from operator', operator)
-...     except ValueError:
-...         print('Error on', operator)
-(1, 0, 0) from operator k_x
-(2, 0, 0) from operator k_x**2
-(0, 1, 0) from operator k_y
-(0, 0, 1) from operator k_z
-(1, 1, 0) from operator k_x*k_y
-(2, 1, 0) from operator k_x**2*k_y
-Error on 2*k_x
-Error on k_x + k_y
+⎡                              ⎛    2        ⎞               ⎤
+⎣(1, k_z, Ψ), (k_y⋅kₓ, kₓ, Ψ), ⎝C⋅kₓ , k_y, Ψ⎠, (kₓ⋅A, kₓ, Ψ)⎦
 ```

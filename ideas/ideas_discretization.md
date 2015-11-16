@@ -20,7 +20,6 @@
 >>> from discretizer import substitute_functions
 >>> from discretizer import derivate
 >>> from discretizer import split_factors
->>> from discretizer import get_powers
 ```
 
 ## Defining input expression
@@ -48,13 +47,14 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 ```
 
 ```python
->>> derivate(expr, (1, 0, 0))
-  - -0.5⋅ⅈ⋅B(-a + x, y, z)⋅C⋅A(-a + x, y, z)    0.5⋅ⅈ⋅B(a + x, y, z)⋅C⋅A(a + x
-- ─────────────────────────────────────────── + ──────────────────────────────
-                       a                                          a           
+>>> kx, ky, kz = momentum_operators
+```
 
-, y, z)
-───────
+```python
+>>> derivate(expr, kx)
+  B(-aₓ + x, y, z)⋅C⋅A(-aₓ + x, y, z)   B(aₓ + x, y, z)⋅C⋅A(aₓ + x, y, z)
+- ─────────────────────────────────── + ─────────────────────────────────
+                  2⋅aₓ                                 2⋅aₓ
 ```
 
 # Designing recursive algorithm
@@ -77,81 +77,66 @@ First idea may be to:
 >>> A = sympy.Function('A')(*coord)
 ```
 
+### Test1
+
 ```python
->>> expr = expr = kx*A*kx*Psi + kx*Psi#+ kz**8*kx*ky*A*kx*Psi + ky**3*kx*ky*A*kx*Psi
->>> expr
-kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z) + kₓ⋅Ψ(x, y, z)
+>>> expr = expr = kx*A*kx*Psi; expr
+kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z)
 ```
 
 ```python
->>> %time recursive(expr)
-CPU times: user 32 ms, sys: 4 ms, total: 36 ms
-Wall time: 36.3 ms
-  - -0.5⋅ⅈ⋅Ψ(-a + x, y, z)    0.5⋅ⅈ⋅Ψ(a + x, y, z)   0.25⋅A(-a + x, y, z)⋅Ψ(x,
-- ───────────────────────── + ──────────────────── + ─────────────────────────
-              a                        a                             2        
-                                                                    a         
+>>> recursive(expr)
+  A(-aₓ + x, y, z)⋅Ψ(x, y, z)   A(-aₓ + x, y, z)⋅Ψ(-2⋅aₓ + x, y, z)   A(aₓ + x
+- ─────────────────────────── + ─────────────────────────────────── - ────────
+                 2                                 2                          
+             4⋅aₓ                              4⋅aₓ                           
 
- y, z)   - -0.25⋅A(-a + x, y, z)⋅Ψ(-2⋅a + x, y, z)    0.25⋅A(a + x, y, z)⋅Ψ(x,
-────── - ────────────────────────────────────────── + ────────────────────────
-                              2                                      2        
-                             a                                      a         
-
- y, z)   - -0.25⋅A(a + x, y, z)⋅Ψ(2⋅a + x, y, z) 
-────── - ────────────────────────────────────────
-                             2                   
-                            a
+, y, z)⋅Ψ(x, y, z)   A(aₓ + x, y, z)⋅Ψ(2⋅aₓ + x, y, z)
+────────────────── + ─────────────────────────────────
+      2                                2              
+  4⋅aₓ                             4⋅aₓ
 ```
 
-# Test
+### Test2
 
 ```python
->>> from discretizer import tb_coefs_1d
+>>> expr = expr = kx*ky*Psi; expr
+kₓ⋅k_y⋅Ψ(x, y, z)
 ```
 
 ```python
->>> n = 3
+>>> recursive(expr)
+Ψ(-aₓ + x, -a_y + y, z)   Ψ(-aₓ + x, a_y + y, z)   Ψ(aₓ + x, -a_y + y, z)   Ψ(
+─────────────────────── - ────────────────────── - ────────────────────── + ──
+        4⋅aₓ⋅a_y                 4⋅aₓ⋅a_y                 4⋅aₓ⋅a_y            
+
+aₓ + x, a_y + y, z)
+───────────────────
+     4⋅aₓ⋅a_y
+```
+
+### Test3
+
+```python
+>>> expr = expr = kx**2*Psi + kx*Psi; expr
+                  2           
+kₓ⋅Ψ(x, y, z) + kₓ ⋅Ψ(x, y, z)
 ```
 
 ```python
->>> tb_coefs_1d(n)
-⎡-0.5⋅ⅈ   1.0⋅ⅈ     -1.0⋅ⅈ   0.5⋅ⅈ⎤
-⎢───────, ─────, 0, ───────, ─────⎥
-⎢    3       3          3       3 ⎥
-⎣   a       a          a       a  ⎦
-```
+>>> recursive(expr)
+  Ψ(-aₓ + x, y, z)   Ψ(aₓ + x, y, z)   Ψ(x, y, z)   Ψ(-2⋅aₓ + x, y, z)   Ψ(2⋅a
+- ──────────────── + ─────────────── - ────────── + ────────────────── + ─────
+        2⋅aₓ               2⋅aₓ              2                2               
+                                         2⋅aₓ             4⋅aₓ                
 
-```python
->>> recursive(kx**n*Psi)
-0.5⋅ⅈ⋅Ψ(-2⋅a + x, y, z)   - -1.0⋅ⅈ⋅Ψ(-a + x, y, z)    1.0⋅ⅈ⋅Ψ(a + x, y, z)   -
-─────────────────────── - ───────────────────────── + ──────────────────── - ─
-            3                          3                        3             
-           a                          a                        a              
-
- -0.5⋅ⅈ⋅Ψ(2⋅a + x, y, z) 
-─────────────────────────
-            3            
-           a
-```
-
-# Playing around
-
-```python
->>> expr = kx*A*kx + C * kx**2 * ky
->>> expr = expr * Psi
->>> expr = sympy.expand(expr); expr
-    2                                             
-C⋅kₓ ⋅k_y⋅Ψ(x, y, z) + kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z)
+ₓ + x, y, z)
+────────────
+     2      
+ 4⋅aₓ
 ```
 
 # Testing split_function
-
-```python
->>> output = []
->>> expr = sympy.expand(expr)
->>> for subexpr in expr.args:
-...     output.append(split_factors(subexpr))
-```
 
 ```python
 >>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, Psi]
@@ -182,39 +167,13 @@ AssertionError on Psi(x, y, z) Psi
 
 ```python
 >>> output
-⎡                      ⎛     2            ⎞  ⎛     2                ⎞         
-⎣(1, k_z, Ψ(x, y, z)), ⎝C, kₓ , Ψ(x, y, z)⎠, ⎝C, kₓ ⋅k_y, Ψ(x, y, z)⎠, (k_y⋅A(
+⎡                                              ⎛    2                 ⎞       
+⎣(1, k_z, Ψ(x, y, z)), (C⋅kₓ, kₓ, Ψ(x, y, z)), ⎝C⋅kₓ , k_y, Ψ(x, y, z)⎠, (k_y⋅
 
-                           ⎤
-x, y, z), kₓ, B⋅Ψ(x, y, z))⎦
-```
-
-# checking powers
-yeah, maybe this should be done when split is being done?
-
-```python
->>> from discretizer import get_powers
+                             ⎤
+A(x, y, z), kₓ, B⋅Ψ(x, y, z))⎦
 ```
 
 ```python
->>> operator = split_factors(subexpr)[1]; operator
-kₓ
-```
 
-```python
->>> test_operators = [kx, kx**2, ky, kz, kx*ky, kx**2*ky, 2*kx, kx+ky]
-...
->>> for operator in test_operators:
-...     try:
-...         print(get_powers(operator), 'from operator', operator)
-...     except ValueError:
-...         print('Error on', operator)
-(1, 0, 0) from operator k_x
-(2, 0, 0) from operator k_x**2
-(0, 1, 0) from operator k_y
-(0, 0, 1) from operator k_z
-(1, 1, 0) from operator k_x*k_y
-(2, 1, 0) from operator k_x**2*k_y
-Error on 2*k_x
-Error on k_x + k_y
 ```
