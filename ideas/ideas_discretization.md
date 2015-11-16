@@ -42,21 +42,21 @@ short hoppings
 ### Test1
 
 ```python
->>> expr = kx*A*kx*Psi; expr
-kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z)
+>>> expr = kx*A*kx*Psi + B + A; expr
+B + kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z) + A(x, y, z)
 ```
 
 ```python
 >>> discretize_expression(expr)
-A(-aₓ + x, y, z)⋅Ψ(x, y, z)   A(-aₓ + x, y, z)⋅Ψ(-2⋅aₓ + x, y, z)   A(aₓ + x, 
-─────────────────────────── - ─────────────────────────────────── + ──────────
-               2                                 2                            
-           4⋅aₓ                              4⋅aₓ                             
+                 A(-aₓ + x, y, z)⋅Ψ(x, y, z)   A(-aₓ + x, y, z)⋅Ψ(-2⋅aₓ + x, y
+B + A(x, y, z) + ─────────────────────────── - ───────────────────────────────
+                                2                                 2           
+                            4⋅aₓ                              4⋅aₓ            
 
-y, z)⋅Ψ(x, y, z)   A(aₓ + x, y, z)⋅Ψ(2⋅aₓ + x, y, z)
-──────────────── - ─────────────────────────────────
-    2                                2              
-4⋅aₓ                             4⋅aₓ
+, z)   A(aₓ + x, y, z)⋅Ψ(x, y, z)   A(aₓ + x, y, z)⋅Ψ(2⋅aₓ + x, y, z)
+──── + ────────────────────────── - ─────────────────────────────────
+                     2                                2              
+                 4⋅aₓ                             4⋅aₓ
 ```
 
 ### Test2
@@ -96,4 +96,32 @@ kₓ⋅Ψ(x, y, z) + kₓ ⋅Ψ(x, y, z)
 ──────────────
        2      
    4⋅aₓ
+```
+
+### Test4
+
+```python
+>>> expr = B; expr
+B
+```
+
+```python
+>>> discretize_expression(expr)
+B
+```
+
+### Test5
+
+```python
+>>> expr = kx; expr
+kₓ
+```
+
+```python
+>>> discretize_expression(expr)
+0
+```
+
+```python
+
 ```
