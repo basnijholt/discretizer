@@ -67,7 +67,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7f6f09dbafd0>
+<graphviz.files.Source at 0x7ff558088f98>
 ```
 
 ```python
@@ -78,7 +78,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f6f09e0fe80>
+<graphviz.files.Source at 0x7ff558042e48>
 ```
 
 # spliting into lhs, operators, rhs
@@ -90,17 +90,35 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ```
 
 ```python
->>> output = []
->>> for subexpr in expr.args:
-...     output.append(split_factors(subexpr))
+>>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, Psi]
 ...
+>>> tested = []
+>>> output = []
+>>> for operator in test_operators:
+...     try:
+...         output.append(split_factors(operator))
+...         tested.append(operator)
+...     except ValueError:
+...         print('ValueError on', operator)
+...     except AssertionError:
+...         print('AssertionError on', operator, operator.func)
+AssertionError on k_x <class 'sympy.core.symbol.Symbol'>
+AssertionError on k_x**2 <class 'sympy.core.power.Pow'>
+AssertionError on Psi <class 'sympy.core.symbol.Symbol'>
+```
+
+```python
 >>> expr.args
-⎛             2        2                 ⎞
-⎝k_z⋅Ψ, k_y⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, kₓ⋅A⋅kₓ⋅Ψ⎠
+⎛           2        2      2             ⎞
+⎝kₓ, k_z, kₓ , k_y⋅kₓ , C⋅kₓ ⋅k_y, kₓ⋅A⋅kₓ⎠
 ```
 
 ```python
 >>> output
-⎡                              ⎛    2        ⎞               ⎤
-⎣(1, k_z, Ψ), (k_y⋅kₓ, kₓ, Ψ), ⎝C⋅kₓ , k_y, Ψ⎠, (kₓ⋅A, kₓ, Ψ)⎦
+⎡                            ⎛    2        ⎞                  ⎤
+⎣(1, k_z, Ψ), (C⋅kₓ, kₓ, Ψ), ⎝C⋅kₓ , k_y, Ψ⎠, (k_y⋅A, kₓ, B⋅Ψ)⎦
+```
+
+```python
+
 ```
