@@ -42,28 +42,33 @@ short hoppings
 ### Test1
 
 ```python
->>> expr = kx*A*kx*Psi + B + A; expr
-B + kₓ⋅A(x, y, z)⋅kₓ⋅Ψ(x, y, z) + A(x, y, z)
+>>> expr = kx*A*kx + B + 5.0 + A; expr
+B + 5.0 + kₓ⋅A(x, y, z)⋅kₓ + A(x, y, z)
 ```
 
 ```python
 >>> discretize_expression(expr)
-                 A(-aₓ + x, y, z)⋅Ψ(x, y, z)   A(-aₓ + x, y, z)⋅Ψ(-2⋅aₓ + x, y
-B + A(x, y, z) + ─────────────────────────── - ───────────────────────────────
-                                2                                 2           
-                            4⋅aₓ                              4⋅aₓ            
+                                                        A(-aₓ + x, y, z)⋅Ψ(x, 
+B⋅Ψ(x, y, z) + A(x, y, z)⋅Ψ(x, y, z) + 5.0⋅Ψ(x, y, z) + ──────────────────────
+                                                                       2      
+                                                                   4⋅aₓ       
 
-, z)   A(aₓ + x, y, z)⋅Ψ(x, y, z)   A(aₓ + x, y, z)⋅Ψ(2⋅aₓ + x, y, z)
-──── + ────────────────────────── - ─────────────────────────────────
-                     2                                2              
-                 4⋅aₓ                             4⋅aₓ
+y, z)   A(-aₓ + x, y, z)⋅Ψ(-2⋅aₓ + x, y, z)   A(aₓ + x, y, z)⋅Ψ(x, y, z)   A(a
+───── - ─────────────────────────────────── + ────────────────────────── - ───
+                           2                                2                 
+                       4⋅aₓ                             4⋅aₓ                  
+
+ₓ + x, y, z)⋅Ψ(2⋅aₓ + x, y, z)
+──────────────────────────────
+               2              
+           4⋅aₓ
 ```
 
 ### Test2
 
 ```python
->>> expr = kx*ky*Psi; expr
-kₓ⋅k_y⋅Ψ(x, y, z)
+>>> expr = kx*ky; expr
+kₓ⋅k_y
 ```
 
 ```python
@@ -80,9 +85,9 @@ kₓ⋅k_y⋅Ψ(x, y, z)
 ### Test3
 
 ```python
->>> expr = kx**2*Psi + kx*Psi; expr
-                  2           
-kₓ⋅Ψ(x, y, z) + kₓ ⋅Ψ(x, y, z)
+>>> expr = kx**2 + kx; expr
+       2
+kₓ + kₓ
 ```
 
 ```python
@@ -101,13 +106,13 @@ kₓ⋅Ψ(x, y, z) + kₓ ⋅Ψ(x, y, z)
 ### Test4
 
 ```python
->>> expr = B; expr
-B
+>>> expr = B+5; expr
+B + 5
 ```
 
 ```python
 >>> discretize_expression(expr)
-B
+B⋅Ψ(x, y, z) + 5⋅Ψ(x, y, z)
 ```
 
 ### Test5
@@ -119,9 +124,22 @@ kₓ
 
 ```python
 >>> discretize_expression(expr)
-0
+ⅈ⋅Ψ(-aₓ + x, y, z)   ⅈ⋅Ψ(aₓ + x, y, z)
+────────────────── - ─────────────────
+       2⋅aₓ                 2⋅aₓ
+```
+
+Test6
+
+```python
+>>> expr = kx*ky*Psi; expr
+kₓ⋅k_y⋅Ψ(x, y, z)
 ```
 
 ```python
-
+>>> try:
+...     discretize_expression(expr)
+>>> except AssertionError as e:
+...     print("AssertionError:", e)
+AssertionError: Hamiltonian should not contain Psi(x, y, z)
 ```

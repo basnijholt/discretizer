@@ -7,8 +7,10 @@ from operator import mul
 
 
 # Some globals
-coord = sympy.symbols('x y z', commutative=False)
 momentum_operators = sympy.symbols('k_x k_y k_z', commutative=False)
+coord = sympy.symbols('x y z', commutative=False)
+wf = sympy.Symbol('Psi')(*coord)
+
 lattice_constants = sympy.symbols('a_x a_y a_z')
 a = sympy.Symbol('a')
 
@@ -133,13 +135,15 @@ def discretize_summand(summand):
     return do_stuff(summand)
 
 
-def discretize_expression(expression):
+def discretize_expression(hamiltonian):
     """ Discretize expression.
 
     Recursive derivation implemented in discretize_summand is applied
     on every summand. Shortening should be applied before return on output.
     """
-    expression = sympy.expand(expression)
+    assert wf not in hamiltonian.atoms(sympy.Function), \
+            "Hamiltonian should not contain {}".format(wf)
+    expression = sympy.expand(hamiltonian * wf)
 
     if expression.func == sympy.Add:
         summands = expression.args

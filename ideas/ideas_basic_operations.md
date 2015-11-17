@@ -71,7 +71,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7fbf30068cf8>
+<graphviz.files.Source at 0x7f46248c4cc0>
 ```
 
 ```python
@@ -82,7 +82,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7fbf30070fd0>
+<graphviz.files.Source at 0x7f46248ccfd0>
 ```
 
 # spliting into lhs, operators, rhs
