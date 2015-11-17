@@ -68,7 +68,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7ff21d446780>
+<graphviz.files.Source at 0x7ff21d3ff978>
 ```
 
 ```python
@@ -82,24 +82,20 @@ C⋅kₓ ⋅k_y⋅Ψ(x, y, z) + kₓ⋅A⋅kₓ⋅Ψ(x, y, z) + k_y⋅kₓ ⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7ff21d454b70>
+<graphviz.files.Source at 0x7ff21d406a58>
 ```
 
 # spliting into lhs, operators, rhs
 
 ## Check of function once it works
+Tests move to the unit testing file.
 
 ```python
 >>> from discretizer.algorithms import split_factors
 ```
 
 ```python
->>> import numpy as np
-```
-
-```python
->>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, A, Psi,
-...                   3, 5.0, np.float(5), np.int(3), sympy.Integer(5), sympy.Float(5)]
+>>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, A, Psi, 3]
 ...
 >>> tested = []
 >>> output = []
@@ -118,8 +114,8 @@ C⋅kₓ ⋅k_y⋅Ψ(x, y, z) + kₓ⋅A⋅kₓ⋅Ψ(x, y, z) + k_y⋅kₓ ⋅Ψ
 ⎡                    2                 2                                      
 ⎣k_z⋅Ψ(x, y, z), C⋅kₓ ⋅Ψ(x, y, z), C⋅kₓ ⋅k_y⋅Ψ(x, y, z), k_y⋅A⋅kₓ⋅B⋅Ψ(x, y, z)
 
-        2                                       ⎤
-, kₓ, kₓ , A, Ψ(x, y, z), 3, 5.0, 5.0, 3, 5, 5.0⎦
+        2                  ⎤
+, kₓ, kₓ , A, Ψ(x, y, z), 3⎦
 ```
 
 ```python
@@ -130,6 +126,6 @@ C⋅kₓ ⋅k_y⋅Ψ(x, y, z) + kₓ⋅A⋅kₓ⋅Ψ(x, y, z) + k_y⋅kₓ ⋅Ψ
                                                                               
 A, kₓ, B⋅Ψ(x, y, z)), (1, kₓ, 1), (kₓ, kₓ, 1), (1, 1, A), (1, 1, Ψ(x, y, z)), 
 
-                                                                      ⎤
-(1, 1, 3), (1, 1, 5.0), (1, 1, 5.0), (1, 1, 3), (1, 1, 5), (1, 1, 5.0)⎦
+         ⎤
+(1, 1, 3)⎦
 ```
