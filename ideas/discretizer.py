@@ -169,11 +169,11 @@ def Psi_to_hopping(Psi):
                 if arg_summands.func == sympy.Mul:
                     if len(arg_summands.args) > 2:
                         print('More than two factors in an argument of Psi')
-                    if not arg_summands.args[0] == sympy.symbols('a'):
+                    if not arg_summands.args[0] in sympy.symbols('a_x a_y a_z'):
                         offset.append(arg_summands.args[0])
                     else:
                         offset.append(arg_summands.args[1])
-                elif arg_summands == a:
+                elif arg_summands in sympy.symbols('a_x a_y a_z'):
                     offset.append(1)
         else:
             print('Argument of \Psi is neither a sum nor a single space variable.')
@@ -192,17 +192,17 @@ def extract_hoppings(expr):
     if expr.func == sympy.Add:
         for summand in expr.args:
             #find a way to make it readable
-            if not summand.func == sympy.Function('Psi'):
+            if not summand.func == wf.func:
                 for i in range(len(summand.args)):
-                    if summand.args[i].func == sympy.Function('Psi'):
+                    if summand.args[i].func == wf.func:
                         index = i
                 if index < len(summand.args) - 1:
                     print('Psi is not in the very end of the term. Output will be wrong!')
 
                 try:
-                    hoppings[Psi_to_hopping(summand.args[-1])] += sympy.Mul(summand.args[:-1])
+                    hoppings[Psi_to_hopping(summand.args[-1])] += sympy.Mul(*summand.args[:-1])
                 except:
-                    hoppings[Psi_to_hopping(summand.args[-1])] = sympy.Mul(summand.args[:-1])
+                    hoppings[Psi_to_hopping(summand.args[-1])] = sympy.Mul(*summand.args[:-1])
             else:
                 try:
                     hoppings[Psi_to_hopping(summand)] += 1
@@ -210,20 +210,47 @@ def extract_hoppings(expr):
                     hoppings[Psi_to_hopping(summand)] = 1
 
     else:
-        if not expr.func == sympy.Function('Psi'):
+        if not expr.func == wf.func:
             for i in range(len(expr.args)):
-                if expr.args[i].func == sympy.Function('Psi'):
+                if expr.args[i].func == wf.func:
                     index = i
             if index < len(expr.args) - 1:
                 print('Psi is not in the very end of the term. Output will be wrong!')
 
             try:
-                hoppings[Psi_to_hopping(expr.args[-1])] += sympy.Mul(expr.args[:-1])
+                hoppings[Psi_to_hopping(expr.args[-1])] += sympy.Mul(*expr.args[:-1])
             except:
-                hoppings[Psi_to_hopping(expr.args[-1])] = sympy.Mul(expr.args[:-1])
+                hoppings[Psi_to_hopping(expr.args[-1])] = sympy.Mul(*expr.args[:-1])
         else:
             try:
                 hoppings[Psi_to_hopping(expr)] += 1
             except:
                 hoppings[Psi_to_hopping(expr)] = 1
     return hoppings
+
+
+def shortening(hop):
+    # make a list of all hopping kinds we have to consider during the shortening
+    hop_kinds = np.array(hop.keys())
+    # find the longest hopping range in each direction
+    longest_ranges = [np.max(hop_kinds[:,i]) for i in range(len(hop_kinds[0,:]))]
+    # define an array in which we are going to store by which factor we 
+    # can shorten the hoppings in each direction
+    shortening_factors = np.ones_like(longest_ranges)
+    # Loop over the direction and each potential shortening factor. 
+    # Inside the loop test whether the hopping distances are actually 
+    # multiples of the potential shortening factor. 
+    for dim in np.arange(len(longest_ranges)):
+        for factor in np.arange(longest_ranges[dim])+1:
+            modulos = np.mod(hop_kinds[:, dim], factor)
+            if np.sum(modulos) < 0.1:
+                shortening_factors[dim] = factor
+    # Apply the shortening factors on the hopping.
+    short_hopping = {}
+    for hopping_kind in hop.keys():
+        short_hopping_kind = tuple(np.array(hopping_kind) / shortening_factors)
+        short_hopping[short_hopping_kind] = hop[hopping_kind]
+        for dim in range(len(shortening_factors)):
+            short_hopping[short_hopping_kind] = short_hopping[short_hopping_kind].subs(lattice_constants[dim], 
+                                                              lattice_constants[dim]/shortening_factors[dim])
+    return short_hopping
