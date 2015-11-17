@@ -77,6 +77,9 @@ def split_factors(expression):
         output['operator'].append(expression.args[0])
         output['lhs'].append(sympy.Pow(expression.args[0], expression.args[1]-1))
 
+    elif isinstance(expression, (int, float, sympy.Integer, sympy.Float)):
+        output['rhs'].append(expression)
+
     elif isinstance(expression, (sympy.Symbol, sympy.Function)):
         if expression in momentum_operators:
             output['operator'].append(expression)

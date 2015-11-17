@@ -21,6 +21,8 @@
 ```python
 >>> A, B, C, D = sympy.symbols('A B C D', commutative=False)
 >>> space_dependent = ['A', 'B']
+...
+>>> x, y, z = coord
 ```
 
 ```python
@@ -46,10 +48,10 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 ```
 
 ```python
->>> derivate(expr, kx)
-   ⎛  B(-aₓ + x, y, z)⋅C⋅A(-aₓ + x, y, z)   B(aₓ + x, y, z)⋅C⋅A(aₓ + x, y, z)⎞
--ⅈ⋅⎜- ─────────────────────────────────── + ─────────────────────────────────⎟
-   ⎝                  2⋅aₓ                                 2⋅aₓ              ⎠
+>>> derivate(A(x, y), ky)
+   ⎛  A(x, -a_y + y)   A(x, a_y + y)⎞
+-ⅈ⋅⎜- ────────────── + ─────────────⎟
+   ⎝      2⋅a_y            2⋅a_y    ⎠
 ```
 
 # expanding
@@ -69,7 +71,7 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 >>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7f2f5f91ea90>
+<graphviz.files.Source at 0x7fbf30068cf8>
 ```
 
 ```python
@@ -80,7 +82,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f2f5f92a518>
+<graphviz.files.Source at 0x7fbf30070fd0>
 ```
 
 # spliting into lhs, operators, rhs
@@ -92,8 +94,13 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ```
 
 ```python
+>>> import numpy as np
+```
+
+```python
 >>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, Psi,
-...                   Psi(*coord)]
+...                   Psi(*coord), 3, 5.0, np.float(5), np.int(3), sympy.Integer(5),
+...                   sympy.Float(5)]
 ...
 >>> tested = []
 >>> output = []
@@ -109,8 +116,11 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> tested
-⎡           2        2                            2               ⎤
-⎣k_z⋅Ψ, C⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, k_y⋅A⋅kₓ⋅B⋅Ψ, kₓ, kₓ , Ψ, Ψ(x, y, z)⎦
+⎡           2        2                            2                           
+⎣k_z⋅Ψ, C⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, k_y⋅A⋅kₓ⋅B⋅Ψ, kₓ, kₓ , Ψ, Ψ(x, y, z), 3, 5.0, 5.
+
+            ⎤
+0, 3, 5, 5.0⎦
 ```
 
 ```python
@@ -118,6 +128,13 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ⎡                            ⎛    2        ⎞                                  
 ⎣(1, k_z, Ψ), (C⋅kₓ, kₓ, Ψ), ⎝C⋅kₓ , k_y, Ψ⎠, (k_y⋅A, kₓ, B⋅Ψ), (1, kₓ, 1), (k
 
-                                        ⎤
-ₓ, kₓ, 1), (1, 1, Ψ), (1, 1, Ψ(x, y, z))⎦
+                                                                              
+ₓ, kₓ, 1), (1, 1, Ψ), (1, 1, Ψ(x, y, z)), (1, 1, 3), (1, 1, 5.0), (1, 1, 5.0),
+
+                                  ⎤
+ (1, 1, 3), (1, 1, 5), (1, 1, 5.0)⎦
+```
+
+```python
+
 ```
