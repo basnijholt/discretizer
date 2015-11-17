@@ -1,5 +1,7 @@
 # Showcase
 
+This will be notebook showing how our stuff works
+
 ## Imports
 
 ```python
@@ -13,15 +15,12 @@
 ## Defining sample expression
 
 ```python
->>> # Helpers from discretizer to avoid misunderstanding
-... kx, ky, kz = discretizer.momentum_operators
+>>> kx, ky, kz = discretizer.momentum_operators
 >>> x, y, z = discretizer.coord
 ...
->>> # Hamiltonian parameters
-... A, B, C = sympy.symbols('A B C', commutative=False)
+>>> A, B, C = sympy.symbols('A B C', commutative=False)
 ...
->>> # Hamiltonian
-... H = kx * A(x, y) * kx + kx * B + C(x,y,z) ;H
+>>> H = kx * A(x, y) * kx + kx * B + C(x,y,z); H
 kₓ⋅B + kₓ⋅A(x, y)⋅kₓ + C(x, y, z)
 ```
 

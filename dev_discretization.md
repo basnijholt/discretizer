@@ -12,19 +12,20 @@
 >>> from sympy.interactive import printing
 >>> printing.init_printing(use_latex='mathjax')
 ...
->>> from discretizer import coord, momentum_operators, a
->>> from discretizer import substitute_functions
->>> from discretizer import derivate
->>> from discretizer import split_factors
+>>> import discretizer
+>>> from discretizer import discretize_expression
+>>> from discretizer import momentum_operators
+>>> from discretizer import coord
 ```
 
 ## Defining input expression
 
 ```python
 >>> kx, ky, kz = momentum_operators
->>> Psi = sympy.Function('Psi')(*coord)
->>> A = sympy.Function('A')(*coord)
->>> B = sympy.Symbol('B')
+>>> x, y, z = coord
+...
+>>> A, B = sympy.symbols('A B', commutative=False)
+>>> A = A(x,y,z)
 ```
 
 # Designing recursive algorithm
@@ -43,7 +44,7 @@ short hoppings
 
 ```python
 >>> expr = kx*A*kx + B + 5.0 + A; expr
-B + 5.0 + kₓ⋅A(x, y, z)⋅kₓ + A(x, y, z)
+5.0 + B + kₓ⋅A(x, y, z)⋅kₓ + A(x, y, z)
 ```
 
 ```python
@@ -107,7 +108,7 @@ kₓ + kₓ
 
 ```python
 >>> expr = B+5; expr
-B + 5
+5 + B
 ```
 
 ```python
@@ -129,10 +130,10 @@ kₓ
        2⋅aₓ                 2⋅aₓ
 ```
 
-Test6
+### Test6
 
 ```python
->>> expr = kx*ky*Psi; expr
+>>> expr = kx*ky*discretizer.algorithms.wf; expr
 kₓ⋅k_y⋅Ψ(x, y, z)
 ```
 

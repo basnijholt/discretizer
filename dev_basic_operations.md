@@ -8,36 +8,40 @@
 * lattice constant is always a
 
 ```python
+>>> from sympy.printing.dot import dotprint
+>>> from graphviz import Source
+>>> graph = lambda x: Source(dotprint(x))
+```
+
+```python
 >>> import sympy
 >>> from sympy.interactive import printing
 >>> printing.init_printing(use_latex='mathjax')
 ...
->>> from discretizer import coord, momentum_operators, a
->>> from discretizer import substitute_functions, derivate
+>>> import discretizer
+>>> from discretizer import discretize_expression
+>>> from discretizer import momentum_operators
+>>> from discretizer import coord
 ```
 
 ## Defining input expression
 
 ```python
 >>> A, B, C, D = sympy.symbols('A B C D', commutative=False)
->>> space_dependent = ['A', 'B']
-...
+>>> kx, ky, kz = momentum_operators
 >>> x, y, z = coord
 ```
 
 ```python
->>> expr = B*C*A + D; expr
-B⋅C⋅A + D
-```
-
-## Substituting functions
-
-```python
->>> expr = substitute_functions(expr, space_dependent); expr
+>>> expr = B(x,y,z)*C*A(x,y,z) + D; expr
 D + B(x, y, z)⋅C⋅A(x, y, z)
 ```
 
 ## Calculation derivation
+
+```python
+>>> from discretizer.algorithms import derivate
+```
 
 ```python
 >>> lattice_constants = sympy.symbols('a_x a_y a_z', commutative=False)
@@ -57,32 +61,28 @@ D + B(x, y, z)⋅C⋅A(x, y, z)
 # expanding
 
 ```python
->>> from sympy.printing.dot import dotprint
->>> from graphviz import Source
->>> graph = lambda x: Source(dotprint(x))
-```
-
-```python
->>> kx, ky, kz = momentum_operators
->>> Psi = sympy.Symbol('Psi', commutative=False) #sympy.Function('Psi')(*coord)
+>>> Psi = discretizer.algorithms.wf
 ```
 
 ```python
 >>> expr = kx*A*kx + C * kx**2 * ky + kz + ky*kx**2
 >>> expr = expr * Psi
 >>> graph(expr)
-<graphviz.files.Source at 0x7f46248c4cc0>
+<graphviz.files.Source at 0x7ff21d446780>
 ```
 
 ```python
 >>> expr = sympy.expand(expr); expr
-    2                           2          
-C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
+    2                                             2                           
+C⋅kₓ ⋅k_y⋅Ψ(x, y, z) + kₓ⋅A⋅kₓ⋅Ψ(x, y, z) + k_y⋅kₓ ⋅Ψ(x, y, z) + k_z⋅Ψ(x, y, z
+
+ 
+)
 ```
 
 ```python
 >>> graph(expr)
-<graphviz.files.Source at 0x7f46248ccfd0>
+<graphviz.files.Source at 0x7ff21d454b70>
 ```
 
 # spliting into lhs, operators, rhs
@@ -90,7 +90,7 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ## Check of function once it works
 
 ```python
->>> from discretizer import split_factors
+>>> from discretizer.algorithms import split_factors
 ```
 
 ```python
@@ -98,9 +98,8 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 ```
 
 ```python
->>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, Psi,
-...                   Psi(*coord), 3, 5.0, np.float(5), np.int(3), sympy.Integer(5),
-...                   sympy.Float(5)]
+>>> test_operators = [kz*Psi, C*kx**2*Psi, C*kx**2*ky*Psi, ky*A*kx*B*Psi, kx, kx**2, A, Psi,
+...                   3, 5.0, np.float(5), np.int(3), sympy.Integer(5), sympy.Float(5)]
 ...
 >>> tested = []
 >>> output = []
@@ -116,25 +115,21 @@ C⋅kₓ ⋅k_y⋅Ψ + kₓ⋅A⋅kₓ⋅Ψ + k_y⋅kₓ ⋅Ψ + k_z⋅Ψ
 
 ```python
 >>> tested
-⎡           2        2                            2                           
-⎣k_z⋅Ψ, C⋅kₓ ⋅Ψ, C⋅kₓ ⋅k_y⋅Ψ, k_y⋅A⋅kₓ⋅B⋅Ψ, kₓ, kₓ , Ψ, Ψ(x, y, z), 3, 5.0, 5.
+⎡                    2                 2                                      
+⎣k_z⋅Ψ(x, y, z), C⋅kₓ ⋅Ψ(x, y, z), C⋅kₓ ⋅k_y⋅Ψ(x, y, z), k_y⋅A⋅kₓ⋅B⋅Ψ(x, y, z)
 
-            ⎤
-0, 3, 5, 5.0⎦
+        2                                       ⎤
+, kₓ, kₓ , A, Ψ(x, y, z), 3, 5.0, 5.0, 3, 5, 5.0⎦
 ```
 
 ```python
 >>> output
-⎡                            ⎛    2        ⎞                                  
-⎣(1, k_z, Ψ), (C⋅kₓ, kₓ, Ψ), ⎝C⋅kₓ , k_y, Ψ⎠, (k_y⋅A, kₓ, B⋅Ψ), (1, kₓ, 1), (k
+⎡                                              ⎛    2                 ⎞       
+⎣(1, k_z, Ψ(x, y, z)), (C⋅kₓ, kₓ, Ψ(x, y, z)), ⎝C⋅kₓ , k_y, Ψ(x, y, z)⎠, (k_y⋅
 
                                                                               
-ₓ, kₓ, 1), (1, 1, Ψ), (1, 1, Ψ(x, y, z)), (1, 1, 3), (1, 1, 5.0), (1, 1, 5.0),
+A, kₓ, B⋅Ψ(x, y, z)), (1, kₓ, 1), (kₓ, kₓ, 1), (1, 1, A), (1, 1, Ψ(x, y, z)), 
 
-                                  ⎤
- (1, 1, 3), (1, 1, 5), (1, 1, 5.0)⎦
-```
-
-```python
-
+                                                                      ⎤
+(1, 1, 3), (1, 1, 5.0), (1, 1, 5.0), (1, 1, 3), (1, 1, 5), (1, 1, 5.0)⎦
 ```
