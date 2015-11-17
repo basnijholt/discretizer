@@ -1,6 +1,7 @@
 import sympy
 import discretizer
 from discretizer.algorithms import split_factors
+from discretizer.algorithms import derivate
 
 from nose.tools import raises
 import numpy as np
@@ -41,3 +42,18 @@ def test_split_factors_1():
 @raises(AssertionError)
 def test_split_factors_2():
     split_factors(A+B)
+
+
+def test_derivate_1():
+    test = {
+        (A(x), kx)       : "-I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))",
+        (A(x), ky)       : "0",
+        (A(x) * B, kx)   : "-I*(-A(-a_x + x)*B/(2*a_x) + A(a_x + x)*B/(2*a_x))"
+
+    }
+
+    for inp, out in test.items():
+        got = sympy.srepr(sympy.expand(sympy.sympify(str(derivate(*inp)))))
+        out = sympy.srepr(sympy.expand(sympy.sympify(out)))
+        assert  got == out,\
+            "Should be: derivate({})=={}. Not {}".format(inp, out, got)
