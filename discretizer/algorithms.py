@@ -231,15 +231,15 @@ def extract_hoppings(expr):
 
 def shortening(hop):
     # make a list of all hopping kinds we have to consider during the shortening
-    hop_kinds = np.array(hop.keys())
+    hop_kinds = np.array(list(hop))
     # find the longest hopping range in each direction
     longest_ranges = [np.max(hop_kinds[:,i]) for i in range(len(hop_kinds[0,:]))]
-    # define an array in which we are going to store by which factor we 
+    # define an array in which we are going to store by which factor we
     # can shorten the hoppings in each direction
     shortening_factors = np.ones_like(longest_ranges)
-    # Loop over the direction and each potential shortening factor. 
-    # Inside the loop test whether the hopping distances are actually 
-    # multiples of the potential shortening factor. 
+    # Loop over the direction and each potential shortening factor.
+    # Inside the loop test whether the hopping distances are actually
+    # multiples of the potential shortening factor.
     for dim in np.arange(len(longest_ranges)):
         for factor in np.arange(longest_ranges[dim])+1:
             modulos = np.mod(hop_kinds[:, dim], factor)
@@ -251,6 +251,6 @@ def shortening(hop):
         short_hopping_kind = tuple(np.array(hopping_kind) / shortening_factors)
         short_hopping[short_hopping_kind] = hop[hopping_kind]
         for dim in range(len(shortening_factors)):
-            short_hopping[short_hopping_kind] = short_hopping[short_hopping_kind].subs(lattice_constants[dim], 
+            short_hopping[short_hopping_kind] = short_hopping[short_hopping_kind].subs(lattice_constants[dim],
                                                               lattice_constants[dim]/shortening_factors[dim])
     return short_hopping
