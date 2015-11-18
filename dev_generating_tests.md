@@ -23,7 +23,6 @@
 ...
 >>> import discretizer
 >>> from discretizer.algorithms import split_factors
->>> from discretizer.algorithms import derivate
 ```
 
 ```python
@@ -38,6 +37,10 @@
 ```
 
 # Tests for: derivate
+
+```python
+>>> from discretizer.algorithms import derivate
+```
 
 ## Manual test
 
@@ -68,13 +71,15 @@
 ```python
 >>> outputs = []
 >>> for test in to_test:
-...     exec("tmp = str(derivate({}, {}))".format(*test))
+...     exec("tmp = str(derivate({0[0]}, {0[1]}))".format(test))
 ...     out = "({}, {}): '{}',".format(test[0], test[1], tmp)
 ...     outputs.append(out)
 ...
 >>> outputs = ['    ' + out for out in outputs]
 >>> outputs = 'test = {\n' + "\n".join(outputs) + '\n}'
 ```
+
+### This should be copied into input of corresponding test
 
 ```python
 >>> print(outputs)
@@ -91,8 +96,6 @@ test = {
 }
 ```
 
-### This should be copied into input of corresponding test
-
 ### Checking if it works
 
 ```python
@@ -104,7 +107,77 @@ test = {
 ...     got = (derivate(*inp))
 ...     out = sympy.sympify(out, locals=ns)
 ...     assert  sympy.simplify(sympy.expand(got - out)) == 0,\
-...         "Should be: derivate({})=={}. Not {}".format(inp, out, got)
+...         "Should be: derivate({0[0]}, {0[1]})=={1}. Not {2}".format(inp, out, got)
+```
+
+# Tests for: discretize_expression and discretize_summand
+
+```python
+>>> from discretizer import discretize_expression
+>>> from discretizer.algorithms import discretize_summand
+>>> from discretizer.algorithms import wf as Psi
+```
+
+## Manual tests
+
+```python
+>>> expr = kx*A(x); expr
+kₓ⋅A(x)
+```
+
+```python
+>>> discretize_summand(expr)
+   ⎛  A(-aₓ + x)   A(aₓ + x)⎞
+-ⅈ⋅⎜- ────────── + ─────────⎟
+   ⎝     2⋅aₓ         2⋅aₓ  ⎠
+```
+
+## Generating automatic tests for nose
+
+```python
+>>> to_test = [
+...     "kx * A(x)",
+...     "kx * Psi",
+...     "kx**2 * Psi",
+...     "kx * A(x) * kx * Psi",
+>>> ]
+```
+
+```python
+>>> outputs = []
+>>> for test in to_test:
+...     exec("tmp = str(discretize_summand({}))".format(test))
+...     out = "{}: '{}',".format(test, tmp)
+...     outputs.append(out)
+...
+>>> outputs = ['    ' + out for out in outputs]
+>>> outputs = 'test = {\n' + "\n".join(outputs) + '\n}'
+```
+
+### This should be copied into input of corresponding test
+
+```python
+>>> print(outputs)
+test = {
+    kx * A(x): '-I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))',
+    kx * Psi: '-I*(-Psi(-a_x + x, y, z)/(2*a_x) + Psi(a_x + x, y, z)/(2*a_x))',
+    kx**2 * Psi: 'Psi(x, y, z)/(2*a_x**2) - Psi(-2*a_x + x, y, z)/(4*a_x**2) - Psi(2*a_x + x, y, z)/(4*a_x**2)',
+    kx * A(x) * kx * Psi: 'A(-a_x + x)*Psi(x, y, z)/(4*a_x**2) - A(-a_x + x)*Psi(-2*a_x + x, y, z)/(4*a_x**2) + A(a_x + x)*Psi(x, y, z)/(4*a_x**2) - A(a_x + x)*Psi(2*a_x + x, y, z)/(4*a_x**2)',
+}
+```
+
+### Checking if it works
+
+```python
+>>> exec(outputs)
+```
+
+```python
+>>> for inp, out in test.items():
+...     got = (discretize_summand(inp))
+...     out = sympy.sympify(out, locals=ns)
+...     assert  sympy.simplify(sympy.expand(got - out)) == 0,\
+...         "Should be: discretize_summand({})=={}. Not {}".format(inp, out, got)
 ```
 
 # spliting into lhs, operators, rhs

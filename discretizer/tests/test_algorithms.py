@@ -2,6 +2,7 @@ import sympy
 import discretizer
 from discretizer.algorithms import split_factors
 from discretizer.algorithms import derivate
+from discretizer.algorithms import discretize_summand
 
 from nose.tools import raises
 import numpy as np
@@ -64,9 +65,28 @@ def test_derivate_1():
         got = (derivate(*inp))
         out = sympy.sympify(out, locals=ns)
         assert  sympy.simplify(sympy.expand(got - out)) == 0,\
-            "Should be: derivate({})=={}. Not {}".format(inp, out, got)
+            "Should be: derivate({0[0]}, {0[1]})=={1}. Not {2}".format(inp, out, got)
 
 
 @raises(AssertionError)
 def test_derivate_2():
     derivate(A(x), kx**2)
+
+
+def test_discretize_summand_1():
+    test = {
+        kx * A(x): '-I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))',
+        kx * Psi: '-I*(-Psi(-a_x + x, y, z)/(2*a_x) + Psi(a_x + x, y, z)/(2*a_x))',
+        kx**2 * Psi: 'Psi(x, y, z)/(2*a_x**2) - Psi(-2*a_x + x, y, z)/(4*a_x**2) - Psi(2*a_x + x, y, z)/(4*a_x**2)',
+        kx * A(x) * kx * Psi: 'A(-a_x + x)*Psi(x, y, z)/(4*a_x**2) - A(-a_x + x)*Psi(-2*a_x + x, y, z)/(4*a_x**2) + A(a_x + x)*Psi(x, y, z)/(4*a_x**2) - A(a_x + x)*Psi(2*a_x + x, y, z)/(4*a_x**2)',
+    }
+
+    for inp, out in test.items():
+        got = (discretize_summand(inp))
+        out = sympy.sympify(out, locals=ns)
+        assert  sympy.simplify(sympy.expand(got - out)) == 0,\
+            "Should be: discretize_summand({})=={}. Not {}".format(inp, out, got)
+
+@raises(AssertionError)
+def test_discretize_summand_2():
+    discretize_summand(kx*A(x)+ B(x))
