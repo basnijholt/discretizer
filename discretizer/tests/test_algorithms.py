@@ -3,6 +3,7 @@ import discretizer
 from discretizer.algorithms import split_factors
 from discretizer.algorithms import derivate
 from discretizer.algorithms import discretize_summand
+from discretizer.algorithms import read_hopping_from_wf
 
 from nose.tools import raises
 import numpy as np
@@ -57,7 +58,6 @@ def test_derivate_1():
         (A, kx): '0',
         (5, kx): '0',
         (A(x) * B(x), kx): '-I*(-A(-a_x + x)*B(-a_x + x)/(2*a_x) + A(a_x + x)*B(a_x + x)/(2*a_x))',
-        (A(x) * B, kx): '-I*(-A(-a_x + x)*B/(2*a_x) + A(a_x + x)*B/(2*a_x))',
         (Psi, ky): '-I*(-Psi(x, -a_y + y, z)/(2*a_y) + Psi(x, a_y + y, z)/(2*a_y))',
     }
 
@@ -90,3 +90,26 @@ def test_discretize_summand_1():
 @raises(AssertionError)
 def test_discretize_summand_2():
     discretize_summand(kx*A(x)+ B(x))
+
+
+def test_read_hoppings_from_wf_1():
+    offsets = [(0,0,0), (1,0,0), (0,1,0), (0,0,1), (1,1,1), (1,2,3)]
+    test = {}
+
+    for offset in offsets:
+        nx, ny, nz = offset
+        key = Psi.subs({x: x + nx*ax, y: y + ny * ay, z: z + nz * az})
+        test[key] = offset
+
+    for inp, out in test.items():
+        got = read_hopping_from_wf(inp)
+        assert got == out,\
+            "Should be: read_hopping_from_wf({}) == {}. Not {}".format(inp, out, got)
+
+
+@raises(AssertionError)
+def test_read_hoppings_from_wf_2():
+    read_hopping_from_wf(A)
+    read_hopping_from_wf(5*Psi)
+    read_hopping_from_wf(Psi+2)
+    read_hopping_from_wf(Psi + A)

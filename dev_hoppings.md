@@ -30,24 +30,38 @@ state:
 >>> printing.init_printing(use_latex='mathjax')
 ...
 >>> import discretizer
->>> from discretizer import discretize_expression
->>> from discretizer import momentum_operators
->>> from discretizer import coord
 ```
 
 ```python
->>> kx, ky, kz = momentum_operators
->>> x, y, z = coord
+>>> kx, ky, kz = discretizer.algorithms.momentum_operators
+>>> ax, ay, az = discretizer.algorithms.lattice_constants
+>>> x, y, z = discretizer.algorithms.coord
 ...
->>> A = sympy.symbols('A', commutative=False)
+>>> A, B = sympy.symbols('A B', commutative=False)
 >>> A = A(x,y,z)
 ```
 
 # Possible inputs to hopping functions as outputs from discretization
 
 ```python
+>>> from discretizer import discretize_expression
+```
+
+```python
+>>> from discretizer.algorithms import read_hopping_from_wf
 >>> from discretizer.algorithms import extract_hoppings
 >>> from discretizer.algorithms import shortening
+>>> from discretizer.algorithms import wf
+```
+
+```python
+>>> expr = wf.subs({x: x-2*ax, y: y-ay}); expr
+Ψ(-2⋅aₓ + x, -a_y + y, z)
+```
+
+```python
+>>> read_hopping_from_wf(expr)
+(-2, -1, 0)
 ```
 
 ### Test1

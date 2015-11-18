@@ -6,7 +6,7 @@ from functools import reduce
 from operator import mul
 
 
-# Some globals
+# ************************** Some globals *********************************
 momentum_operators = sympy.symbols('k_x k_y k_z', commutative=False)
 coord = sympy.symbols('x y z', commutative=False)
 wf = sympy.Symbol('Psi')(*coord)
@@ -37,6 +37,14 @@ def derivate(expression, operator):
     Returns:
     --------
     expression : derivate of input expression
+
+    Examples:
+    ---------
+    >>> A = sympy.Symbol('A')
+    >>> x = discretizer.coord[0]
+    >>> kx = discretizer.momentum_operators[0]
+    >>> derivate(A(x), kx)
+    -I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))
     """
     assert operator in momentum_operators, \
             "Operator '{}' does not belong to [kx, ky, kz].".format(operator)
@@ -52,12 +60,12 @@ def derivate(expression, operator):
 
 
 def split_factors(expression):
-    """ Split symbolic expression for a discretization step.
+    """ Split symbolic `expression` for a discretization step.
 
     Parameters:
     -----------
     expression : sympy expression
-        symbolic expression to be split
+        symbolic expression to be split that represents single summand
 
     Output:
     -------
@@ -71,6 +79,10 @@ def split_factors(expression):
     rhs : sympy expression
         part of expression that is derivated in current step
 
+    Raises:
+    -------
+    AssertionError
+        if input `expression` is of type ``sympy.Add``
     """
     assert not isinstance(expression, sympy.Add), 'input expression must not be sympy.Add'
     output = {'rhs': [1], 'operator': [1], 'lhs': [1]}
@@ -158,9 +170,33 @@ def discretize_expression(hamiltonian):
 
 
 # ****** extracring hoppings ***********
-def Psi_to_hopping(Psi):
+def read_hopping_from_wf(inp_psi):
+    """ Read hopping from an input wave function.
+
+    Parameters:
+    -----------
+    inpt_psi : ``~discretizer.algorithms.wf`` like object
+        example could be: wf(x + ax, y + 2 * ay, z + 3 * nz)
+
+    Returns:
+    --------
+    offset: tuple
+        offset of a wave function in respect to (x, y, z)
+
+    Examples:
+    ---------
+    >>> import discretizer
+    >>> wf = discretizer.algorithms.wf
+    >>> ax, ay, az = discretizer.algorithms.lattice_constants
+    >>> x, y, z = discretizer.algorithms.coord
+    >>> subs = {x: x+ax, y: y + 2 * ay, z: z + 3 * az}
+    >>> expr = wf.subs(subs)
+    >>> read_hopping_from_wf(expr)
+    (1, 2, 3)
+    """
+    assert inp_psi.func == wf.func, 'Input should be correct wf used in module.'
     offset = []
-    for argument in Psi.args:
+    for argument in inp_psi.args:
         temp = sympy.expand(argument)
         if temp in sympy.symbols('x y z', commutative = False):
             offset.append(0)
@@ -168,7 +204,7 @@ def Psi_to_hopping(Psi):
             for arg_summands in temp.args:
                 if arg_summands.func == sympy.Mul:
                     if len(arg_summands.args) > 2:
-                        print('More than two factors in an argument of Psi')
+                        print('More than two factors in an argument of inp_psi')
                     if not arg_summands.args[0] in sympy.symbols('a_x a_y a_z'):
                         offset.append(arg_summands.args[0])
                     else:
@@ -176,7 +212,7 @@ def Psi_to_hopping(Psi):
                 elif arg_summands in sympy.symbols('a_x a_y a_z'):
                     offset.append(1)
         else:
-            print('Argument of \Psi is neither a sum nor a single space variable.')
+            print('Argument of \inp_psi is neither a sum nor a single space variable.')
     return tuple(offset)
 
 
@@ -200,14 +236,14 @@ def extract_hoppings(expr):
                     print('Psi is not in the very end of the term. Output will be wrong!')
 
                 try:
-                    hoppings[Psi_to_hopping(summand.args[-1])] += sympy.Mul(*summand.args[:-1])
+                    hoppings[read_hopping_from_wf(summand.args[-1])] += sympy.Mul(*summand.args[:-1])
                 except:
-                    hoppings[Psi_to_hopping(summand.args[-1])] = sympy.Mul(*summand.args[:-1])
+                    hoppings[read_hopping_from_wf(summand.args[-1])] = sympy.Mul(*summand.args[:-1])
             else:
                 try:
-                    hoppings[Psi_to_hopping(summand)] += 1
+                    hoppings[read_hopping_from_wf(summand)] += 1
                 except:
-                    hoppings[Psi_to_hopping(summand)] = 1
+                    hoppings[read_hopping_from_wf(summand)] = 1
 
     else:
         if not expr.func == wf.func:
@@ -218,14 +254,14 @@ def extract_hoppings(expr):
                 print('Psi is not in the very end of the term. Output will be wrong!')
 
             try:
-                hoppings[Psi_to_hopping(expr.args[-1])] += sympy.Mul(*expr.args[:-1])
+                hoppings[read_hopping_from_wf(expr.args[-1])] += sympy.Mul(*expr.args[:-1])
             except:
-                hoppings[Psi_to_hopping(expr.args[-1])] = sympy.Mul(*expr.args[:-1])
+                hoppings[read_hopping_from_wf(expr.args[-1])] = sympy.Mul(*expr.args[:-1])
         else:
             try:
-                hoppings[Psi_to_hopping(expr)] += 1
+                hoppings[read_hopping_from_wf(expr)] += 1
             except:
-                hoppings[Psi_to_hopping(expr)] = 1
+                hoppings[read_hopping_from_wf(expr)] = 1
     return hoppings
 
 
