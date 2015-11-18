@@ -2,8 +2,7 @@ import itertools
 import sympy
 import numpy as np
 from math import factorial
-from functools import reduce
-from operator import mul
+from collections import defaultdict
 
 
 # ************************** Some globals *********************************
@@ -162,11 +161,20 @@ def discretize_expression(hamiltonian):
     else:
         summands = [expression]
 
-    output = []
+    outputs = []
     for summand in summands:
-        output.append(discretize_summand(summand))
+        outputs.append(discretize_summand(summand))
 
-    return sympy.expand(sympy.Add(*output))
+    outputs = [extract_hoppings(summand) for summand in outputs]
+    outputs = [shortening(summand) for summand in outputs]
+
+    output = defaultdict(int)
+    for summand in outputs:
+        for k, v in summand.items():
+                output[k] += v
+
+    return dict(output)
+
 
 
 # ****** extracring hoppings ***********
@@ -292,7 +300,8 @@ def shortening(hoppings):
         short_hopping_kind = tuple(int(i) for i in short_hopping_kind)
 
         short_hopping[short_hopping_kind] = hoppings[hopping_kind]
-        for dim in range(len(shortening_factors)):
-            short_hopping[short_hopping_kind] = short_hopping[short_hopping_kind].subs(lattice_constants[dim],
-                                                              lattice_constants[dim]/shortening_factors[dim])
+        for lat_const, factor in zip(lattice_constants, shortening_factors):
+            factor = int(factor)
+            subs = {lat_const: lat_const/factor}
+            short_hopping[short_hopping_kind] = short_hopping[short_hopping_kind].subs(subs)
     return short_hopping

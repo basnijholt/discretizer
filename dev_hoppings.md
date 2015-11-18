@@ -67,96 +67,123 @@ state:
 ### Test1
 
 ```python
->>> test = discretize_expression(kx);test
-ⅈ⋅Ψ(-aₓ + x, y, z)   ⅈ⋅Ψ(aₓ + x, y, z)
-────────────────── - ─────────────────
-       2⋅aₓ                 2⋅aₓ
+>>> from discretizer.algorithms import discretize_summand
+>>> def inputs_for_sebastians_functions(hamiltonian):
+...     """
+...     """
+...     assert wf not in hamiltonian.atoms(sympy.Function), \
+...             "Hamiltonian should not contain {}".format(wf)
+...     expression = sympy.expand(hamiltonian * wf)
+...
+...     if expression.func == sympy.Add:
+...         summands = expression.args
+...     else:
+...         summands = [expression]
+...
+...     outputs = []
+...     for summand in summands:
+...         outputs.append(discretize_summand(summand))
+...     return outputs
 ```
 
 ```python
->>> hop = extract_hoppings(test); hop
-⎧             ⅈ               -ⅈ  ⎫
-⎨(-1, 0, 0): ────, (1, 0, 0): ────⎬
-⎩            2⋅aₓ             2⋅aₓ⎭
+>>> test = inputs_for_sebastians_functions(kx);test
+⎡   ⎛  Ψ(-aₓ + x, y, z)   Ψ(aₓ + x, y, z)⎞⎤
+⎢-ⅈ⋅⎜- ──────────────── + ───────────────⎟⎥
+⎣   ⎝        2⋅aₓ               2⋅aₓ     ⎠⎦
 ```
 
 ```python
->>> shortening(hop)
-⎧            0.5⋅ⅈ             -0.5⋅ⅈ ⎫
-⎨(-1, 0, 0): ─────, (1, 0, 0): ───────⎬
-⎩              aₓ                 aₓ  ⎭
+>>> hop = [extract_hoppings(summand) for summand in test]
+>>> hop
+⎡⎧             ⅈ               -ⅈ  ⎫⎤
+⎢⎨(-1, 0, 0): ────, (1, 0, 0): ────⎬⎥
+⎣⎩            2⋅aₓ             2⋅aₓ⎭⎦
+```
+
+```python
+>>> [shortening(summand) for summand in hop]
+⎡⎧             ⅈ               -ⅈ  ⎫⎤
+⎢⎨(-1, 0, 0): ────, (1, 0, 0): ────⎬⎥
+⎣⎩            2⋅aₓ             2⋅aₓ⎭⎦
 ```
 
 ### Test2
 
 ```python
->>> test = discretize_expression(kx*A*kx);test
-A(-aₓ + x, y, z)⋅Ψ(x, y, z)   A(-aₓ + x, y, z)⋅Ψ(-2⋅aₓ + x, y, z)   A(aₓ + x, 
-─────────────────────────── - ─────────────────────────────────── + ──────────
-               2                                 2                            
-           4⋅aₓ                              4⋅aₓ                             
+>>> test = inputs_for_sebastians_functions(kx*A*kx);test
+⎡A(-aₓ + x, y, z)⋅Ψ(x, y, z)   A(-aₓ + x, y, z)⋅Ψ(-2⋅aₓ + x, y, z)   A(aₓ + x,
+⎢─────────────────────────── - ─────────────────────────────────── + ─────────
+⎢               2                                 2                           
+⎣           4⋅aₓ                              4⋅aₓ                            
 
-y, z)⋅Ψ(x, y, z)   A(aₓ + x, y, z)⋅Ψ(2⋅aₓ + x, y, z)
-──────────────── - ─────────────────────────────────
-    2                                2              
-4⋅aₓ                             4⋅aₓ
+ y, z)⋅Ψ(x, y, z)   A(aₓ + x, y, z)⋅Ψ(2⋅aₓ + x, y, z)⎤
+───────────────── - ─────────────────────────────────⎥
+     2                                2              ⎥
+ 4⋅aₓ                             4⋅aₓ               ⎦
 ```
 
 ```python
->>> hop = extract_hoppings(test); hop
-⎧            -A(-aₓ + x, y, z)              A(-aₓ + x, y, z)   A(aₓ + x, y, z)
-⎪(-2, 0, 0): ──────────────────, (0, 0, 0): ──────────────── + ───────────────
-⎨                      2                             2                  2     
-⎪                  4⋅aₓ                          4⋅aₓ               4⋅aₓ      
-⎩                                                                             
+>>> hop = [extract_hoppings(summand) for summand in test]
+>>> hop
+⎡⎧            -A(-aₓ + x, y, z)              A(-aₓ + x, y, z)   A(aₓ + x, y, z
+⎢⎪(-2, 0, 0): ──────────────────, (0, 0, 0): ──────────────── + ──────────────
+⎢⎨                      2                             2                  2    
+⎢⎪                  4⋅aₓ                          4⋅aₓ               4⋅aₓ     
+⎣⎩                                                                            
 
-             -A(aₓ + x, y, z) ⎫
-, (2, 0, 0): ─────────────────⎪
-                       2      ⎬
-                   4⋅aₓ       ⎪
-                              ⎭
+)             -A(aₓ + x, y, z) ⎫⎤
+─, (2, 0, 0): ─────────────────⎪⎥
+                        2      ⎬⎥
+                    4⋅aₓ       ⎪⎥
+                               ⎭⎦
 ```
 
 ```python
->>> shortening(hop)
-⎧              ⎛  aₓ          ⎞               ⎛  aₓ          ⎞    ⎛aₓ         
-⎪            -A⎜- ── + x, y, z⎟              A⎜- ── + x, y, z⎟   A⎜── + x, y, 
-⎪              ⎝  2           ⎠               ⎝  2           ⎠    ⎝2          
-⎨(-1, 0, 0): ───────────────────, (0, 0, 0): ───────────────── + ─────────────
-⎪                      2                              2                  2    
-⎪                    aₓ                             aₓ                 aₓ     
-⎩                                                                             
+>>> [shortening(summand) for summand in hop]
+⎡⎧              ⎛  aₓ          ⎞               ⎛  aₓ          ⎞    ⎛aₓ        
+⎢⎪            -A⎜- ── + x, y, z⎟              A⎜- ── + x, y, z⎟   A⎜── + x, y,
+⎢⎪              ⎝  2           ⎠               ⎝  2           ⎠    ⎝2         
+⎢⎨(-1, 0, 0): ───────────────────, (0, 0, 0): ───────────────── + ────────────
+⎢⎪                      2                              2                  2   
+⎢⎪                    aₓ                             aₓ                 aₓ    
+⎣⎩                                                                            
 
- ⎞               ⎛aₓ          ⎞ ⎫
-z⎟             -A⎜── + x, y, z⎟ ⎪
- ⎠               ⎝2           ⎠ ⎪
-──, (1, 0, 0): ─────────────────⎬
-                        2       ⎪
-                      aₓ        ⎪
-                                ⎭
+  ⎞               ⎛aₓ          ⎞ ⎫⎤
+ z⎟             -A⎜── + x, y, z⎟ ⎪⎥
+  ⎠               ⎝2           ⎠ ⎪⎥
+───, (1, 0, 0): ─────────────────⎬⎥
+                         2       ⎪⎥
+                       aₓ        ⎪⎥
+                                 ⎭⎦
 ```
 
 ### Test3
 
 ```python
->>> test = discretize_expression(kx + A + 5);test
-                                       ⅈ⋅Ψ(-aₓ + x, y, z)   ⅈ⋅Ψ(aₓ + x, y, z)
-A(x, y, z)⋅Ψ(x, y, z) + 5⋅Ψ(x, y, z) + ────────────────── - ─────────────────
-                                              2⋅aₓ                 2⋅aₓ
+>>> test = inputs_for_sebastians_functions(kx + A + 5);test
+⎡                 ⎛  Ψ(-aₓ + x, y, z)   Ψ(aₓ + x, y, z)⎞                      
+⎢5⋅Ψ(x, y, z), -ⅈ⋅⎜- ──────────────── + ───────────────⎟, A(x, y, z)⋅Ψ(x, y, z
+⎣                 ⎝        2⋅aₓ               2⋅aₓ     ⎠                      
+
+ ⎤
+)⎥
+ ⎦
 ```
 
 ```python
->>> hop = extract_hoppings(test); hop
-⎧             ⅈ                                          -ⅈ  ⎫
-⎨(-1, 0, 0): ────, (0, 0, 0): 5 + A(x, y, z), (1, 0, 0): ────⎬
-⎩            2⋅aₓ                                        2⋅aₓ⎭
+>>> hop = [extract_hoppings(summand) for summand in test]
+>>> hop
+⎡                ⎧             ⅈ               -ⅈ  ⎫                         ⎤
+⎢{(0, 0, 0): 5}, ⎨(-1, 0, 0): ────, (1, 0, 0): ────⎬, {(0, 0, 0): A(x, y, z)}⎥
+⎣                ⎩            2⋅aₓ             2⋅aₓ⎭                         ⎦
 ```
 
 ```python
->>> shortening(hop)
-⎧            0.5⋅ⅈ                                        -0.5⋅ⅈ ⎫
-⎨(-1, 0, 0): ─────, (0, 0, 0): 5 + A(x, y, z), (1, 0, 0): ───────⎬
-⎩              aₓ                                            aₓ  ⎭
+>>> [shortening(summand) for summand in hop]
+⎡                ⎧             ⅈ               -ⅈ  ⎫                         ⎤
+⎢{(0, 0, 0): 5}, ⎨(-1, 0, 0): ────, (1, 0, 0): ────⎬, {(0, 0, 0): A(x, y, z)}⎥
+⎣                ⎩            2⋅aₓ             2⋅aₓ⎭                         ⎦
 ```
 
 ```python
