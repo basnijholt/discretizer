@@ -147,8 +147,21 @@ def discretize_summand(summand):
 
 
 def discretize_expression(hamiltonian):
-    """ Discretize expression.
+    """ Discretize continous `hamiltonian` into discrete tight-binding model.
 
+    Parameters:
+    -----------
+    hamiltonian : sympy expression
+        stands for hermitian Hamiltonian
+
+    Returns:
+    --------
+    discrete_hamiltonian: dict
+        dict in which key is offset of hopping ((0, 0, 0) for onsite)
+        and value is corresponding hopping (onsite) value.
+
+    Note:
+    -----
     Recursive derivation implemented in discretize_summand is applied
     on every summand. Shortening should be applied before return on output.
     """
