@@ -15,12 +15,40 @@ a = sympy.Symbol('a')
 
 
 # **************** Operation on sympy expressions **************************
-def substitute_functions(expr, space_dependent=[]):
-    """ Substitute space_dependent symbols with function of (x, y, z) """
-    symbols = [s for s in expr.atoms(sympy.Symbol) if s.name in space_dependent]
-    subs = {s: sympy.Function(s.name)(*coord) for s in symbols}
+def substitute_functions(expression, space_dependent={}):
+    """ Substitute `AppliedUndef` functions into expression.
 
-    return expr.subs(subs)
+    Symbols defined in space_dependent will be substitute with a
+    function of specified coordinates.
+
+    Parameters:
+    -----------
+    expression : sympy expression
+    space_dependent : dict
+        Dictionary list which keys are symbols standing for a space
+        dependent function and keys are coordinates on which it depeneds
+
+    Returns:
+    --------
+    expression
+
+    Note:
+    -----
+    This function may became part of preprocessing function.
+    """
+    subs = {}
+    for s, v in space_dependent.items():
+        if isinstance(v, (tuple, list)):
+            for i in v:
+                assert i in coord, \
+                    "Argument '{}' should be symbol from discretizer.coord.".format(i)
+            subs[s] = s(*v)
+        else:
+            assert v in coord, \
+                "Argument '{}' should be symbol from discretizer.coord.".format(v)
+            subs[s] = s(v)
+
+    return expression.subs(subs)
 
 
 def derivate(expression, operator):
