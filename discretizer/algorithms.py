@@ -1,7 +1,6 @@
 import itertools
 import sympy
 import numpy as np
-from math import factorial
 from collections import defaultdict
 
 
@@ -150,7 +149,7 @@ def split_factors(expression):
     return output
 
 
-def discretize_summand(summand):
+def _discretize_summand(summand):
     """ Discretize one summand. """
     assert not isinstance(summand, sympy.Add), "Input should be one summand."
 
@@ -174,28 +173,33 @@ def discretize_summand(summand):
     return do_stuff(summand)
 
 
-def discretize_expression(hamiltonian):
-    """ Discretize continous `hamiltonian` into discrete tight-binding model.
+def _discretize_expression(expression):
+    """ Discretize continous `expression` into discrete tb representation.
 
     Parameters:
     -----------
-    hamiltonian : sympy expression
+    expression : sympy expression
         stands for hermitian Hamiltonian
 
     Returns:
     --------
-    discrete_hamiltonian: dict
+    discrete_expression: dict
         dict in which key is offset of hopping ((0, 0, 0) for onsite)
         and value is corresponding hopping (onsite) value.
 
     Note:
     -----
-    Recursive derivation implemented in discretize_summand is applied
-    on every summand. Shortening should be applied before return on output.
+    Recursive derivation implemented in _discretize_summand is applied
+    on every summand. Shortening is applied before return on output.
     """
-    assert wf not in hamiltonian.atoms(sympy.Function), \
-            "Hamiltonian should not contain {}".format(wf)
-    expression = sympy.expand(hamiltonian * wf)
+
+    if not isinstance(expression, sympy.Expr):
+        raise TypeError('Input hamiltonian should be a valid sympy expression.')
+
+    if wf in expression.atoms(sympy.Function):
+        raise ValueError("Hamiltonian must not contain {}.".format(wf))
+
+    expression = sympy.expand(expression * wf)
 
     if expression.func == sympy.Add:
         summands = expression.args
@@ -204,7 +208,7 @@ def discretize_expression(hamiltonian):
 
     outputs = []
     for summand in summands:
-        outputs.append(discretize_summand(summand))
+        outputs.append(_discretize_summand(summand))
 
     outputs = [extract_hoppings(summand) for summand in outputs]
     outputs = [shortening(summand) for summand in outputs]
@@ -217,8 +221,41 @@ def discretize_expression(hamiltonian):
     return dict(output)
 
 
+def discretize(hamiltonian):
+    """ Discretize continous `expression` into discrete tb representation.
 
-# ****** extracring hoppings ***********
+    Parameters:
+    -----------
+    expression : sympy expression
+        stands for hermitian Hamiltonian
+
+    Returns:
+    --------
+    discrete_expression: dict
+        dict in which key is offset of hopping ((0, 0, 0) for onsite)
+        and value is corresponding hopping (onsite) value.
+
+    Note:
+    -----
+    Recursive derivation implemented in _discretize_summand is applied
+    on every summand. Shortening is applied before return on output.
+    """
+
+    if not isinstance(hamiltonian, sympy.Matrix):
+        return _discretize_expression(hamiltonian)
+
+    shape = hamiltonian.shape
+
+    output = defaultdict(lambda: sympy.zeros(*shape))
+    for i,j in itertools.product(range(shape[0]), repeat=2):
+        hoppings = _discretize_expression(hamiltonian[i, j])
+
+        for offset, hop in hoppings.items():
+            output[offset][i,j] += hop
+    return output
+
+
+# ****** extracting hoppings ***********
 def read_hopping_from_wf(inp_psi):
     """ Read hopping from an input wave function.
 
@@ -345,4 +382,9 @@ def shortening(hoppings):
             factor = int(factor)
             subs = {lat_const: lat_const/factor}
             short_hopping[short_hopping_kind] = short_hopping[short_hopping_kind].subs(subs)
+
+    # We don't need separate a_x, a_y and a_z anymore.
+    for key, val in short_hopping.items():
+        short_hopping[key] = val.subs({i: a for i in lattice_constants})
+
     return short_hopping

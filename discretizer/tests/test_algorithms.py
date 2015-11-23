@@ -2,7 +2,7 @@ import sympy
 import discretizer
 from discretizer.algorithms import split_factors
 from discretizer.algorithms import derivate
-from discretizer.algorithms import discretize_summand
+from discretizer.algorithms import _discretize_summand
 from discretizer.algorithms import read_hopping_from_wf
 
 from nose.tools import raises
@@ -82,14 +82,14 @@ def test_discretize_summand_1():
     }
 
     for inp, out in test.items():
-        got = (discretize_summand(inp))
+        got = (_discretize_summand(inp))
         out = sympy.sympify(out, locals=ns)
         assert  sympy.simplify(sympy.expand(got - out)) == 0,\
-            "Should be: discretize_summand({})=={}. Not {}".format(inp, out, got)
+            "Should be: _discretize_summand({})=={}. Not {}".format(inp, out, got)
 
 @raises(AssertionError)
 def test_discretize_summand_2():
-    discretize_summand(kx*A(x)+ B(x))
+    _discretize_summand(kx*A(x)+ B(x))
 
 
 def test_read_hoppings_from_wf_1():

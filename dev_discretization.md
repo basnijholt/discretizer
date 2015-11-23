@@ -13,7 +13,7 @@
 >>> printing.init_printing(use_latex='mathjax')
 ...
 >>> import discretizer
->>> from discretizer import discretize_expression
+>>> from discretizer.algorithms import _discretize_expression as discretize_expression
 >>> from discretizer import momentum_operators
 >>> from discretizer import coord
 ```
@@ -37,7 +37,6 @@ short hoppings
 4. gather results from summands (after the loop from 2).
 
 ```python
->>> from discretizer.algorithms import discretize_expression
 >>> from discretizer.algorithms import wf
 ...
 >>> from discretizer.algorithms import extract_hoppings
@@ -45,42 +44,25 @@ short hoppings
 ```
 
 ```python
->>> expr = kx**2 + kx; expr
-       2
-kₓ + kₓ
-```
-
-```python
->>> A/2/2
-A(x, y, z)
-──────────
-    4
-```
-
-```python
->>> ax, ay, az = discretizer.algorithms.lattice_constants
->>> tmp = 1/ax/2
-```
-
-```python
->>> import numpy as np
-```
-
-```python
->>> tmp.subs(ax, ax/np.int64(1))
-0.5
-───
- aₓ
+>>> expr = kx**2 + kx + kx*sympy.sin(x); expr
+                   2
+kₓ + kₓ⋅sin(x) + kₓ
 ```
 
 ```python
 >>> output = discretize_expression(expr)
 >>> output
-⎧             ⅈ      1               2                 ⅈ      1 ⎫
-⎪(-1, 0, 0): ──── - ───, (0, 0, 0): ───, (1, 0, 0): - ──── - ───⎪
-⎨            2⋅aₓ     2               2               2⋅aₓ     2⎬
-⎪                   aₓ              aₓ                       aₓ ⎪
-⎩                                                               ⎭
+⎧             ⅈ    ⅈ⋅sin(a - x)   1              2                 ⅈ    ⅈ⋅sin(
+⎪(-1, 0, 0): ─── - ──────────── - ──, (0, 0, 0): ──, (1, 0, 0): - ─── - ──────
+⎨            2⋅a       2⋅a         2              2               2⋅a       2⋅
+⎪                                 a              a                            
+⎩                                                                             
+
+a + x)   1 ⎫
+────── - ──⎪
+a         2⎬
+         a ⎪
+           ⎭
 ```
 
 ### Test1
@@ -92,21 +74,21 @@ A(x, y, z)
 
 ```python
 >>> discretize_expression(expr)
-⎧              ⎛  aₓ          ⎞                                      ⎛  aₓ    
-⎪            -A⎜- ── + x, y, z⎟                                     A⎜- ── + x
-⎪              ⎝  2           ⎠                                      ⎝  2     
-⎨(-1, 0, 0): ───────────────────, (0, 0, 0): 5.0 + B + A(x, y, z) + ──────────
-⎪                      2                                                     2
-⎪                    aₓ                                                    aₓ 
+⎧              ⎛  a          ⎞                                      ⎛  a      
+⎪            -A⎜- ─ + x, y, z⎟                                     A⎜- ─ + x, 
+⎪              ⎝  2          ⎠                                      ⎝  2      
+⎨(-1, 0, 0): ──────────────────, (0, 0, 0): 5.0 + B + A(x, y, z) + ───────────
+⎪                     2                                                    2  
+⎪                    a                                                    a   
 ⎩                                                                             
 
-      ⎞    ⎛aₓ          ⎞               ⎛aₓ          ⎞ ⎫
-, y, z⎟   A⎜── + x, y, z⎟             -A⎜── + x, y, z⎟ ⎪
-      ⎠    ⎝2           ⎠               ⎝2           ⎠ ⎪
-─────── + ───────────────, (1, 0, 0): ─────────────────⎬
-                  2                            2       ⎪
-                aₓ                           aₓ        ⎪
-                                                       ⎭
+    ⎞    ⎛a          ⎞               ⎛a          ⎞ ⎫
+y, z⎟   A⎜─ + x, y, z⎟             -A⎜─ + x, y, z⎟ ⎪
+    ⎠    ⎝2          ⎠               ⎝2          ⎠ ⎪
+───── + ──────────────, (1, 0, 0): ────────────────⎬
+               2                           2       ⎪
+              a                           a        ⎪
+                                                   ⎭
 ```
 
 ### Test2
@@ -118,13 +100,11 @@ kₓ⋅k_y
 
 ```python
 >>> discretize_expression(expr)
-⎧               -1                     1                     1                
-⎨(-1, -1, 0): ────────, (-1, 1, 0): ────────, (1, -1, 0): ────────, (1, 1, 0):
-⎩             4⋅aₓ⋅a_y              4⋅aₓ⋅a_y              4⋅aₓ⋅a_y            
-
-   -1    ⎫
- ────────⎬
- 4⋅aₓ⋅a_y⎭
+⎧             -1                 1                 1               -1  ⎫
+⎪(-1, -1, 0): ────, (-1, 1, 0): ────, (1, -1, 0): ────, (1, 1, 0): ────⎪
+⎨                2                 2                 2                2⎬
+⎪             4⋅a               4⋅a               4⋅a              4⋅a ⎪
+⎩                                                                      ⎭
 ```
 
 ### Test3
@@ -137,11 +117,11 @@ kₓ + kₓ
 
 ```python
 >>> discretize_expression(expr)
-⎧             ⅈ      1               2                 ⅈ      1 ⎫
-⎪(-1, 0, 0): ──── - ───, (0, 0, 0): ───, (1, 0, 0): - ──── - ───⎪
-⎨            2⋅aₓ     2               2               2⋅aₓ     2⎬
-⎪                   aₓ              aₓ                       aₓ ⎪
-⎩                                                               ⎭
+⎧             ⅈ    1              2                 ⅈ    1 ⎫
+⎪(-1, 0, 0): ─── - ──, (0, 0, 0): ──, (1, 0, 0): - ─── - ──⎪
+⎨            2⋅a    2              2               2⋅a    2⎬
+⎪                  a              a                      a ⎪
+⎩                                                          ⎭
 ```
 
 ### Test4
@@ -165,9 +145,9 @@ kₓ
 
 ```python
 >>> discretize_expression(expr)
-⎧             ⅈ               -ⅈ  ⎫
-⎨(-1, 0, 0): ────, (1, 0, 0): ────⎬
-⎩            2⋅aₓ             2⋅aₓ⎭
+⎧             ⅈ              -ⅈ ⎫
+⎨(-1, 0, 0): ───, (1, 0, 0): ───⎬
+⎩            2⋅a             2⋅a⎭
 ```
 
 ### Test6
@@ -182,9 +162,4 @@ kₓ⋅k_y⋅Ψ(x, y, z)
 ...     discretize_expression(expr)
 >>> except AssertionError as e:
 ...     print("AssertionError:", e)
-AssertionError: Hamiltonian should not contain Psi(x, y, z)
-```
-
-```python
-
 ```
