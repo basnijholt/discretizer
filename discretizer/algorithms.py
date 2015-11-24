@@ -3,6 +3,14 @@ import sympy
 import numpy as np
 from collections import defaultdict
 
+from sympy.utilities.lambdify import lambdastr
+from sympy.printing.lambdarepr import LambdaPrinter
+from sympy.core.function import AppliedUndef
+
+class NumericPrinter(LambdaPrinter):
+    def _print_ImaginaryUnit(self, expr):
+        return "1.j"
+
 
 # ************************** Some globals *********************************
 momentum_operators = sympy.symbols('k_x k_y k_z', commutative=False)
@@ -254,6 +262,132 @@ def discretize(hamiltonian):
         for offset, hop in hoppings.items():
             discrete_hamiltonian[offset][i,j] += hop
     return discrete_hamiltonian
+
+# ************ Making kwant functions ***********
+def make_return_string(expr):
+    """Process a sympy expression into an evaluatable Python return statement.
+
+    Parameters:
+    -----------
+    expr : sympy.Expr instance
+
+    Returns:
+    --------
+    output : string
+        A return string that can be used to assemble a Kwant value function.
+    func_symbols : set of sympy.Symbol instances
+        All space dependent functions that appear in the expression.
+    const_symbols : set of sympy.Symbol instances
+        All constants that appear in the expression.
+    """
+    func_symbols = {sympy.Symbol(i.func.__name__) for i in
+                    expr.atoms(AppliedUndef)}
+
+    free_symbols = {i for i in expr.free_symbols if i not in coord}
+    free_symbols = {i for i in free_symbols if i not in momentum_operators}
+
+    const_symbols = free_symbols - func_symbols
+
+    output = lambdastr((), expr, printer=NumericPrinter)[len('lambda : '):]
+    output = output.replace('MutableDenseMatrix', 'np.array')
+
+    return 'return {}'.format(output), func_symbols, const_symbols
+
+
+def assign_symbols(func_symbols, const_symbols, onsite=True):
+    """Generate a series of assingments defining a set of symbols.
+
+    Parameters:
+    -----------
+    func_symbols : set of sympy.Symbol instances
+        All space dependent functions that appear in the expression.
+    const_symbols : set of sympy.Symbol instances
+        All constants that appear in the expression.
+
+    Returns:
+    --------
+    assignments : list of strings
+        List of lines used for including in a function.
+
+    Notes:
+    where A, B, C are all the free symbols plus the symbols that appear on the
+    ------
+    The resulting lines begin with a coordinates assignment of form
+    `x,y,z = site.pos` when onsite=True, or
+    `x,y,z = site2.pos` when onsite=False
+
+    followed by two lines of form
+    `A, B, C = p.A, p.B, p.C`
+    `f, g, h = p.f, p.g, p.h`
+    where A, B, C are symbols representing constants and f, g, h are symbols
+    representing functions. Separation of constant and func symbols is probably
+    not necessary but I leave it for now, just in case.
+    """
+    lines = []
+    func_names = [i.name for i in func_symbols]
+    const_names = [i.name for i in const_symbols]
+
+    lines.insert(0, ', '.join(func_names) + ' = p.' +
+                 ', p.'.join(func_names))
+
+    lines.insert(0, ', '.join(const_names) + ' = p.' +
+                 ', p.'.join(const_names))
+
+    if onsite:
+        site = 'site'
+    else:
+        site = 'site2'
+
+    lines.insert(0, 'x, y, z = {}.pos'.format(site))
+
+    return lines
+
+
+def value_function(content, name='_anonymous_func', onsite=True, verbose=False):
+    """Generate a Kwant value function from a list of lines containing its body.
+
+    Parameters:
+    -----------
+    content : list of lines
+        Lines forming the body of the function.
+    name : string
+        Function name (not important).
+    onsite : bool
+        If True, the function call signature will be `f(site, p)`, otherwise
+        `f(site1, site2, p)`.
+    verbose : bool
+        Whether the function bodies should be printed.
+
+    Returns:
+    --------
+    f : function
+        The function defined in a namespace containing only the cached values
+        of Pauli matrices.
+    """
+    if not content[-1].startswith('return'):
+        raise ValueError('The function does not end with a return statement')
+
+    separator = '\n' + 4 * ' '
+    site_string = 'site' if onsite else 'site1, site2'
+    header = 'def {0}({1}, p):'.format(name, site_string)
+    func_code = separator.join([header] + list(content))
+
+    namespace = {}
+    if verbose:
+        print(func_code)
+    exec(func_code, namespace)
+    return namespace[name]
+
+
+def make_kwant_functions(discrete_hamiltonian, verbose=False):
+    """Transform discrete hamiltonian into valid kwant functions.
+
+    Parameters:
+    -----------
+
+
+    """
+    pass
 
 
 # ****** extracting hoppings ***********

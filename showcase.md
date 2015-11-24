@@ -27,21 +27,21 @@ This will be notebook showing how our stuff works
 ```
 
 ```python
->>> H = sympy.Matrix([[kx*A*kx, B*kx], [kx*B, C]])
+>>> H = sympy.Matrix([[kx*A*kx, B*kx], [kx*B, C+sympy.sin(x)]])
 ```
 
 ```python
 >>> H
-⎡kₓ⋅A⋅kₓ  B⋅kₓ⎤
-⎢             ⎥
-⎣ kₓ⋅B     C  ⎦
+⎡kₓ⋅A⋅kₓ     B⋅kₓ   ⎤
+⎢                   ⎥
+⎣ kₓ⋅B    C + sin(x)⎦
 ```
 
 ```python
->>> H = substitute_functions(H, space_dependent={A: (x, y, z), B: x}); H
-⎡kₓ⋅A(x, y, z)⋅kₓ  B(x)⋅kₓ⎤
-⎢                         ⎥
-⎣    kₓ⋅B(x)          C   ⎦
+>>> H = substitute_functions(H, space_dependent={A: (x, y, z), B: (x,)}); H
+⎡kₓ⋅A(x, y, z)⋅kₓ   B(x)⋅kₓ  ⎤
+⎢                            ⎥
+⎣    kₓ⋅B(x)       C + sin(x)⎦
 ```
 
 ```python
@@ -59,56 +59,54 @@ defaultdict(<function discretizer.algorithms.discretize.<locals>.<lambda>>,
 ⎪            ⎣       2⋅a                ⎦                                     
 ⎩                                                                             
 
-         ⎞   ⎤             ⎡  ⎛a          ⎞           ⎤⎫
-+ x, y, z⎟   ⎥             ⎢-A⎜─ + x, y, z⎟           ⎥⎪
-         ⎠   ⎥             ⎢  ⎝2          ⎠   -ⅈ⋅B(x) ⎥⎪
-──────────  0⎥, (1, 0, 0): ⎢────────────────  ────────⎥⎪
-   2         ⎥             ⎢        2           2⋅a   ⎥⎪
-  a          ⎥             ⎢       a                  ⎥⎬
-             ⎥             ⎢                          ⎥⎪
-            C⎦             ⎢  -ⅈ⋅B(a + x)             ⎥⎪
-                           ⎢  ────────────       0    ⎥⎪
-                           ⎣      2⋅a                 ⎦⎪
-                                                       ⎭)
+         ⎞            ⎤             ⎡  ⎛a          ⎞           ⎤⎫
++ x, y, z⎟            ⎥             ⎢-A⎜─ + x, y, z⎟           ⎥⎪
+         ⎠            ⎥             ⎢  ⎝2          ⎠   -ⅈ⋅B(x) ⎥⎪
+──────────      0     ⎥, (1, 0, 0): ⎢────────────────  ────────⎥⎪
+   2                  ⎥             ⎢        2           2⋅a   ⎥⎪
+  a                   ⎥             ⎢       a                  ⎥⎬
+                      ⎥             ⎢                          ⎥⎪
+            C + sin(x)⎦             ⎢  -ⅈ⋅B(a + x)             ⎥⎪
+                                    ⎢  ────────────       0    ⎥⎪
+                                    ⎣      2⋅a                 ⎦⎪
+                                                                ⎭)
 ```
 
 # Generating functions (work in progress)
 
 ```python
->>> hop = discretize(H)[1,0,0][0, 0]
+>>> hop = discretize(H)[1,0,0]; hop
+⎡  ⎛a          ⎞           ⎤
+⎢-A⎜─ + x, y, z⎟           ⎥
+⎢  ⎝2          ⎠   -ⅈ⋅B(x) ⎥
+⎢────────────────  ────────⎥
+⎢        2           2⋅a   ⎥
+⎢       a                  ⎥
+⎢                          ⎥
+⎢  -ⅈ⋅B(a + x)             ⎥
+⎢  ────────────       0    ⎥
+⎣      2⋅a                 ⎦
 ```
 
 ```python
->>> hop
-  ⎛a          ⎞ 
--A⎜─ + x, y, z⎟ 
-  ⎝2          ⎠ 
-────────────────
-        2       
-       a
+>>> from discretizer.algorithms import make_kwant_functions, make_return_string
+>>> from discretizer.algorithms import value_function, assign_symbols
 ```
 
 ```python
->>> from sympy.utilities.lambdify import lambdastr
->>> from sympy.printing.lambdarepr import LambdaPrinter
+>>> value = hop
+>>> onsite = True
 ...
->>> class NumericPrinter(LambdaPrinter):
-...     def _print_ImaginaryUnit(self, expr):
-...         return "1.j"
-```
-
-```python
->>> def make_return_string(expr):
+>>> return_string, func_symbols, const_symbols = make_return_string(value)
+>>> lines = assign_symbols(func_symbols, const_symbols, onsite=onsite)
+>>> lines.append(return_string)
 ...
->>> #     exp
-...     string = lambdastr((), hop, printer=NumericPrinter)[len('lambda : '):]
-...
-...     return 'return {}'.format(string)
-```
-
-```python
->>> make_return_string(H)
-'return (-A(a/2 + x, y, z)/a**2)'
+>>> f = value_function(lines, verbose=True, onsite=False)
+def _anonymous_func(site1, site2, p):
+    x, y, z = site.pos
+    a = p.a
+    B, A = p.B, p.A
+    return (np.array([[-A(a/2 + x, y, z)/a**2, -I*B(x)/(2*a)], [-I*B(a + x)/(2*a), 0]]))
 ```
 
 # Identifying
@@ -126,27 +124,20 @@ defaultdict(<function discretizer.algorithms.discretize.<locals>.<lambda>>,
 ```python
 >>> print(isinstance(A, sympy.Symbol))
 >>> print(isinstance(f, sympy.function.UndefinedFunction))
-True
-True
 ```
 
 ```python
 >>> print(isinstance(Ax, sympy.Function))
 >>> print(isinstance(fx, sympy.Function))
-True
-True
 ```
 
 ```python
 >>> print(isinstance(Ax, sympy.function.AppliedUndef))
 >>> print(isinstance(fx, sympy.function.AppliedUndef))
-True
-True
 ```
 
 ```python
 >>> Ax == fx
-True
 ```
 
 # AppliedUndef may be useful to separate our functions from others
@@ -155,8 +146,6 @@ True
 >>> s = sympy.sin(x)
 >>> print(isinstance(s, sympy.function.AppliedUndef))
 >>> print(isinstance(s, sympy.Function))
-False
-True
 ```
 
 ```python
@@ -165,10 +154,16 @@ True
 
 ```python
 >>> sympy.function.Function
-Function
 ```
 
 ```python
 >>> type(s)
-sympy.core.function.FunctionClass
+```
+
+```python
+
+```
+
+```python
+
 ```
