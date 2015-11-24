@@ -90,20 +90,20 @@ def split_factors(expression):
 
     Parameters:
     -----------
-    expression : sympy expression
-        symbolic expression to be split that represents single summand
+    expression : sympy.Expr instance
+        The expression to be split. It should represents single summand.
 
     Output:
     -------
-    lhs : sympy expression
-        part of expression standing to the left from operators
-        that acts in current discretization step
+    lhs : sympy.Expr instance
+        Part of expression standing to the left from operators
+        that acts in current discretization step.
 
-    operators: sympy expression
-        operator that perform discretization in current step
+    operators: sympy.Expr instance
+        Operator that perform discretization in current step.
 
-    rhs : sympy expression
-        part of expression that is derivated in current step
+    rhs : sympy.Expr instance
+        Part of expression that is derivated in current step.
 
     Raises:
     -------
@@ -178,8 +178,8 @@ def _discretize_expression(expression):
 
     Parameters:
     -----------
-    expression : sympy expression
-        stands for hermitian Hamiltonian
+    expression : sympy.Expr instance
+        The expression to be discretized.
 
     Returns:
     --------
@@ -213,12 +213,12 @@ def _discretize_expression(expression):
     outputs = [extract_hoppings(summand) for summand in outputs]
     outputs = [shortening(summand) for summand in outputs]
 
-    output = defaultdict(int)
+    discrete_expression = defaultdict(int)
     for summand in outputs:
         for k, v in summand.items():
-                output[k] += v
+                discrete_expression[k] += v
 
-    return dict(output)
+    return dict(discrete_expression)
 
 
 def discretize(hamiltonian):
@@ -226,12 +226,12 @@ def discretize(hamiltonian):
 
     Parameters:
     -----------
-    expression : sympy expression
-        stands for hermitian Hamiltonian
+    hamiltonian : sympy.Expr instance
+        The expression for the Hamiltonian.
 
     Returns:
     --------
-    discrete_expression: dict
+    discrete_hamiltonian: dict
         dict in which key is offset of hopping ((0, 0, 0) for onsite)
         and value is corresponding hopping (onsite) value.
 
@@ -246,13 +246,13 @@ def discretize(hamiltonian):
 
     shape = hamiltonian.shape
 
-    output = defaultdict(lambda: sympy.zeros(*shape))
+    discrete_hamiltonian = defaultdict(lambda: sympy.zeros(*shape))
     for i,j in itertools.product(range(shape[0]), repeat=2):
         hoppings = _discretize_expression(hamiltonian[i, j])
 
         for offset, hop in hoppings.items():
-            output[offset][i,j] += hop
-    return output
+            discrete_hamiltonian[offset][i,j] += hop
+    return discrete_hamiltonian
 
 
 # ****** extracting hoppings ***********
