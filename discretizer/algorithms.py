@@ -110,7 +110,8 @@ def split_factors(expression):
     AssertionError
         if input `expression` is of type ``sympy.Add``
     """
-    assert not isinstance(expression, sympy.Add), 'input expression must not be sympy.Add'
+    assert not isinstance(expression, sympy.Add), \
+        'Input expression must not be sympy.Add. It should be a single summand.'
     output = {'rhs': [1], 'operator': [1], 'lhs': [1]}
 
     if isinstance(expression, sympy.Pow):
