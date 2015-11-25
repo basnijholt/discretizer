@@ -46,11 +46,11 @@ def substitute_functions(expression, space_dependent={}):
         if isinstance(v, (tuple, list)):
             for i in v:
                 assert i in ['x', 'y', 'z'], \
-                    "Argument '{}' should be symbol from discretizer.coordinates.".format(i)
+                    "Argument '{}' should be list of ['x', 'y', 'z'].".format(i)
             subs[s] = s(*sympy.symbols(v, commutative=False))
         else:
             assert v in ['x', 'y', 'z'], \
-                "Argument '{}' should be symbol from discretizer.coordinates.".format(v)
+                "Argument '{}' should be list of ['x', 'y', 'z'].".format(v)
             subs[s] = s(sympy.Symbol(v, commutative=False))
 
     return expression.subs(subs)
