@@ -1,6 +1,7 @@
 import sympy
 import discretizer
 from discretizer.algorithms import split_factors
+from discretizer.algorithms import wavefunction_name
 from discretizer.algorithms import derivate
 from discretizer.algorithms import _discretize_summand
 from discretizer.algorithms import read_hopping_from_wf
@@ -8,11 +9,12 @@ from discretizer.algorithms import read_hopping_from_wf
 from nose.tools import raises
 import numpy as np
 
-kx, ky, kz = discretizer.algorithms.momentum_operators
-ax, ay, az = discretizer.algorithms.lattice_constants
-x, y, z = discretizer.algorithms.coord
+kx, ky, kz = sympy.symbols('k_x k_y k_z', commutative=False)
+x, y, z = sympy.symbols('x y z', commutative=False)
+ax, ay, az = sympy.symbols('a_x a_y a_z')
 
-Psi = discretizer.algorithms.wf
+wf =  sympy.Function(wavefunction_name)
+Psi = sympy.Function(wavefunction_name)(x, y, z)
 A, B = sympy.symbols('A B', commutative=False)
 
 ns = {'A': A, 'B': B, 'a_x': ax, 'a_y': ay, 'az': az, 'x': x, 'y': y, 'z': z}
@@ -68,9 +70,14 @@ def test_derivate_1():
             "Should be: derivate({0[0]}, {0[1]})=={1}. Not {2}".format(inp, out, got)
 
 
-@raises(AssertionError)
+@raises(TypeError)
 def test_derivate_2():
     derivate(A(x), kx**2)
+
+
+@raises(ValueError)
+def test_derivate_3():
+    derivate(A(x), sympy.Symbol('A'))
 
 
 def test_discretize_summand_1():
@@ -106,6 +113,20 @@ def test_read_hoppings_from_wf_1():
         assert got == out,\
             "Should be: read_hopping_from_wf({}) == {}. Not {}".format(inp, out, got)
 
+
+def test_read_hoppings_from_wf_2():
+    test = {
+        wf(x, y, z): (0,0,0),
+        wf(x, y): (0, 0),
+        wf(x, z): (0, 0),
+        wf(x+ax, y-2*ay): (1, -2),
+        wf(x, az+3*az): (0, 3)
+    }
+
+    for inp, out in test.items():
+        got = read_hopping_from_wf(inp)
+        assert got == out,\
+            "Should be: read_hopping_from_wf({}) == {}. Not {}".format(inp, out, got)
 
 @raises(AssertionError)
 def test_read_hoppings_from_wf_2():

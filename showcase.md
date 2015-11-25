@@ -21,71 +21,126 @@ This will be notebook showing how our stuff works
 
 ```python
 >>> kx, ky, kz = discretizer.momentum_operators
->>> x, y, z = discretizer.coord
+>>> x, y, z = discretizer.coordinates
 ...
 >>> A, B, C = sympy.symbols('A B C', commutative=False)
 ```
 
 ```python
->>> H = sympy.Matrix([[kx*A*kx, B*kx], [kx*B, C+sympy.sin(x)]])
+>>> H1 = ky * A(y) * ky
+>>> discretize(H1, discrete_coordinates=['y'])
+⎧         ⎛  a    ⎞          ⎛  a    ⎞    ⎛a    ⎞          ⎛a    ⎞ ⎫
+⎪       -A⎜- ─ + y⎟         A⎜- ─ + y⎟   A⎜─ + y⎟        -A⎜─ + y⎟ ⎪
+⎪         ⎝  2    ⎠          ⎝  2    ⎠    ⎝2    ⎠          ⎝2    ⎠ ⎪
+⎨(-1,): ────────────, (0,): ────────── + ────────, (1,): ──────────⎬
+⎪             2                  2           2                2    ⎪
+⎪            a                  a           a                a     ⎪
+⎩                                                                  ⎭
+```
+
+```python
+>>> H1 = kx * A(x, y) * kx
+>>> discretize(H1, discrete_coordinates=['x', 'y'])
+⎧           ⎛  a       ⎞            ⎛  a       ⎞    ⎛a       ⎞            ⎛a  
+⎪         -A⎜- ─ + x, y⎟           A⎜- ─ + x, y⎟   A⎜─ + x, y⎟          -A⎜─ +
+⎪           ⎝  2       ⎠            ⎝  2       ⎠    ⎝2       ⎠            ⎝2  
+⎨(-1, 0): ───────────────, (0, 0): ───────────── + ───────────, (1, 0): ──────
+⎪                 2                       2              2                    
+⎪                a                       a              a                     
+⎩                                                                             
+
+     ⎞ ⎫
+ x, y⎟ ⎪
+     ⎠ ⎪
+───────⎬
+ 2     ⎪
+a      ⎪
+       ⎭
+```
+
+```python
+>>> H = sympy.Matrix([[kx*A*kx, B*kx], [kx*B, ky*C*ky+sympy.sin(x)]])
 ```
 
 ```python
 >>> H
-⎡kₓ⋅A⋅kₓ     B⋅kₓ   ⎤
-⎢                   ⎥
-⎣ kₓ⋅B    C + sin(x)⎦
+⎡kₓ⋅A⋅kₓ         B⋅kₓ       ⎤
+⎢                           ⎥
+⎣ kₓ⋅B    k_y⋅C⋅k_y + sin(x)⎦
 ```
 
 ```python
->>> H = substitute_functions(H, space_dependent={A: (x, y, z), B: (x,)}); H
-⎡kₓ⋅A(x, y, z)⋅kₓ   B(x)⋅kₓ  ⎤
-⎢                            ⎥
-⎣    kₓ⋅B(x)       C + sin(x)⎦
+>>> H = substitute_functions(H, space_dependent={A: ('x', 'y'), B: ('x',), C:('y',)}); H
+⎡kₓ⋅A(x, y)⋅kₓ         B(x)⋅kₓ       ⎤
+⎢                                    ⎥
+⎣   kₓ⋅B(x)     k_y⋅C(y)⋅k_y + sin(x)⎦
 ```
 
 ```python
->>> discretize(H)
+>>> H.atoms(sympy.Symbol)
+set([kₓ, k_y, x, y])
+```
+
+```python
+>>> discretize(H, discrete_coordinates=['x', 'y'])
 defaultdict(<function discretizer.algorithms.discretize.<locals>.<lambda>>,
-            ⎧            ⎡  ⎛  a          ⎞         ⎤             ⎡ ⎛  a          ⎞    ⎛a 
-⎪            ⎢-A⎜- ─ + x, y, z⎟         ⎥             ⎢A⎜- ─ + x, y, z⎟   A⎜─ 
-⎪            ⎢  ⎝  2          ⎠   ⅈ⋅B(x)⎥             ⎢ ⎝  2          ⎠    ⎝2 
-⎪(-1, 0, 0): ⎢──────────────────  ──────⎥, (0, 0, 0): ⎢──────────────── + ────
-⎪            ⎢         2           2⋅a  ⎥             ⎢        2              
-⎨            ⎢        a                 ⎥             ⎢       a               
-⎪            ⎢                          ⎥             ⎢                       
-⎪            ⎢   ⅈ⋅B(-a + x)            ⎥             ⎣                0      
-⎪            ⎢   ───────────        0   ⎥                                     
-⎪            ⎣       2⋅a                ⎦                                     
-⎩                                                                             
+            ⎧         ⎡  ⎛  a       ⎞         ⎤                                      ⎡ ⎛  
+⎪         ⎢-A⎜- ─ + x, y⎟         ⎥                                      ⎢A⎜- 
+⎪         ⎢  ⎝  2       ⎠   ⅈ⋅B(x)⎥                                      ⎢ ⎝  
+⎪(-1, 0): ⎢───────────────  ──────⎥, (0, -1): ⎡0       0      ⎤, (0, 0): ⎢────
+⎪         ⎢        2         2⋅a  ⎥           ⎢               ⎥          ⎢    
+⎪         ⎢       a               ⎥           ⎢     ⎛  a    ⎞ ⎥          ⎢    
+⎨         ⎢                       ⎥           ⎢   -C⎜- ─ + y⎟ ⎥          ⎢    
+⎪         ⎢  ⅈ⋅B(-a + x)          ⎥           ⎢     ⎝  2    ⎠ ⎥          ⎢    
+⎪         ⎢  ───────────      0   ⎥           ⎢0  ────────────⎥          ⎢    
+⎪         ⎣      2⋅a              ⎦           ⎢         2     ⎥          ⎢    
+⎪                                             ⎣        a      ⎦          ⎢    
+⎪                                                                        ⎢    
+⎩                                                                        ⎣    
 
-         ⎞            ⎤             ⎡  ⎛a          ⎞           ⎤⎫
-+ x, y, z⎟            ⎥             ⎢-A⎜─ + x, y, z⎟           ⎥⎪
-         ⎠            ⎥             ⎢  ⎝2          ⎠   -ⅈ⋅B(x) ⎥⎪
-──────────      0     ⎥, (1, 0, 0): ⎢────────────────  ────────⎥⎪
-   2                  ⎥             ⎢        2           2⋅a   ⎥⎪
-  a                   ⎥             ⎢       a                  ⎥⎬
-                      ⎥             ⎢                          ⎥⎪
-            C + sin(x)⎦             ⎢  -ⅈ⋅B(a + x)             ⎥⎪
-                                    ⎢  ────────────       0    ⎥⎪
-                                    ⎣      2⋅a                 ⎦⎪
-                                                                ⎭)
+a       ⎞    ⎛a       ⎞                                ⎤                      
+─ + x, y⎟   A⎜─ + x, y⎟                                ⎥                      
+2       ⎠    ⎝2       ⎠                                ⎥                      
+───────── + ───────────                0               ⎥, (0, 1): ⎡0      0   
+   2              2                                    ⎥          ⎢           
+  a              a                                     ⎥          ⎢     ⎛a    
+                                                       ⎥          ⎢   -C⎜─ + y
+                                   ⎛  a    ⎞    ⎛a    ⎞⎥          ⎢     ⎝2    
+                                  C⎜- ─ + y⎟   C⎜─ + y⎟⎥          ⎢0  ────────
+                                   ⎝  2    ⎠    ⎝2    ⎠⎥          ⎢        2  
+         0               sin(x) + ────────── + ────────⎥          ⎣       a   
+                                       2           2   ⎥                      
+                                      a           a    ⎦                      
+
+             ⎡  ⎛a       ⎞           ⎤⎫
+             ⎢-A⎜─ + x, y⎟           ⎥⎪
+             ⎢  ⎝2       ⎠   -ⅈ⋅B(x) ⎥⎪
+  ⎤, (1, 0): ⎢─────────────  ────────⎥⎪
+  ⎥          ⎢       2         2⋅a   ⎥⎪
+⎞ ⎥          ⎢      a                ⎥⎪
+⎟ ⎥          ⎢                       ⎥⎬
+⎠ ⎥          ⎢-ⅈ⋅B(a + x)            ⎥⎪
+──⎥          ⎢────────────      0    ⎥⎪
+  ⎥          ⎣    2⋅a                ⎦⎪
+  ⎦                                   ⎪
+                                      ⎪
+                                      ⎭)
 ```
 
 # Generating functions (work in progress)
 
 ```python
 >>> hop = discretize(H)[1,0,0]; hop
-⎡  ⎛a          ⎞           ⎤
-⎢-A⎜─ + x, y, z⎟           ⎥
-⎢  ⎝2          ⎠   -ⅈ⋅B(x) ⎥
-⎢────────────────  ────────⎥
-⎢        2           2⋅a   ⎥
-⎢       a                  ⎥
-⎢                          ⎥
-⎢  -ⅈ⋅B(a + x)             ⎥
-⎢  ────────────       0    ⎥
-⎣      2⋅a                 ⎦
+⎡  ⎛a       ⎞           ⎤
+⎢-A⎜─ + x, y⎟           ⎥
+⎢  ⎝2       ⎠   -ⅈ⋅B(x) ⎥
+⎢─────────────  ────────⎥
+⎢       2         2⋅a   ⎥
+⎢      a                ⎥
+⎢                       ⎥
+⎢-ⅈ⋅B(a + x)            ⎥
+⎢────────────      0    ⎥
+⎣    2⋅a                ⎦
 ```
 
 ```python
@@ -98,15 +153,15 @@ defaultdict(<function discretizer.algorithms.discretize.<locals>.<lambda>>,
 >>> onsite = True
 ...
 >>> return_string, func_symbols, const_symbols = make_return_string(value)
->>> lines = assign_symbols(func_symbols, const_symbols, onsite=onsite)
+>>> lines = assign_symbols(func_symbols, const_symbols, onsite=onsite, discrete_coordinates=['x', 'y'])
 >>> lines.append(return_string)
 ...
 >>> f = value_function(lines, verbose=True, onsite=False)
 def _anonymous_func(site1, site2, p):
-    x, y, z = site.pos
+    x, y = site.pos
     a = p.a
     B, A = p.B, p.A
-    return (np.array([[-A(a/2 + x, y, z)/a**2, -I*B(x)/(2*a)], [-I*B(a + x)/(2*a), 0]]))
+    return (np.array([[-A(a/2 + x, y)/a**2, -I*B(x)/(2*a)], [-I*B(a + x)/(2*a), 0]]))
 ```
 
 # Identifying
@@ -146,24 +201,4 @@ def _anonymous_func(site1, site2, p):
 >>> s = sympy.sin(x)
 >>> print(isinstance(s, sympy.function.AppliedUndef))
 >>> print(isinstance(s, sympy.Function))
-```
-
-```python
->>> s = sympy.sin
-```
-
-```python
->>> sympy.function.Function
-```
-
-```python
->>> type(s)
-```
-
-```python
-
-```
-
-```python
-
 ```

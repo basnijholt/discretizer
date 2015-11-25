@@ -13,9 +13,8 @@ class NumericPrinter(LambdaPrinter):
 
 
 # ************************** Some globals *********************************
-momentum_operators = sympy.symbols('k_x k_y k_z', commutative=False)
-coord = sympy.symbols('x y z', commutative=False)
-wf = sympy.Symbol('Psi')(*coord)
+coordinates = sympy.symbols('x y z', commutative=False)
+wavefunction_name = 'Psi'
 
 lattice_constants = sympy.symbols('a_x a_y a_z')
 a = sympy.Symbol('a')
@@ -30,70 +29,34 @@ def substitute_functions(expression, space_dependent={}):
 
     Parameters:
     -----------
-    expression : sympy expression
+    expression : sympy.Expr instance
     space_dependent : dict
-        Dictionary list which keys are symbols standing for a space
-        dependent function and keys are coordinates on which it depeneds
+        Dictionary list which keys are symbols standing for a space dependent
+        parameters and values are list or tuple with strings representing names
+        of space dependent coordinates.
 
     Returns:
     --------
-    expression
+    expression : sympy.Expr instance
+        Expression containing space dependent functions.
 
-    Note:
-    -----
-    This function may became part of preprocessing function.
     """
     subs = {}
     for s, v in space_dependent.items():
         if isinstance(v, (tuple, list)):
             for i in v:
-                assert i in coord, \
-                    "Argument '{}' should be symbol from discretizer.coord.".format(i)
-            subs[s] = s(*v)
+                assert i in ['x', 'y', 'z'], \
+                    "Argument '{}' should be symbol from discretizer.coordinates.".format(i)
+            subs[s] = s(*sympy.symbols(v, commutative=False))
         else:
-            assert v in coord, \
-                "Argument '{}' should be symbol from discretizer.coord.".format(v)
-            subs[s] = s(v)
+            assert v in ['x', 'y', 'z'], \
+                "Argument '{}' should be symbol from discretizer.coordinates.".format(v)
+            subs[s] = s(sympy.Symbol(v, commutative=False))
 
     return expression.subs(subs)
 
 
-def derivate(expression, operator):
-    """ Calculate derivate of expression for given momentum operator:
-
-    Parameters:
-    -----------
-    expression : sympy expression
-        Valid sympy expression containing functions to to be derivated
-    operator : sympy symbol
-        Sympy symbol representing momentum operator
-
-    Returns:
-    --------
-    expression : derivate of input expression
-
-    Examples:
-    ---------
-    >>> A = sympy.Symbol('A')
-    >>> x = discretizer.coord[0]
-    >>> kx = discretizer.momentum_operators[0]
-    >>> derivate(A(x), kx)
-    -I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))
-    """
-    assert operator in momentum_operators, \
-            "Operator '{}' does not belong to [kx, ky, kz].".format(operator)
-
-    if isinstance(expression, (int, float)):
-        return 0
-    else:
-        ind = momentum_operators.index(operator)
-        expr1 = expression.subs(coord[ind], coord[ind] + lattice_constants[ind])
-        expr2 = expression.subs(coord[ind], coord[ind] - lattice_constants[ind])
-        output = (expr1 - expr2) / 2 / lattice_constants[ind]
-        return -sympy.I * sympy.expand(output)
-
-
-def split_factors(expression):
+def split_factors(expression, discrete_coordinates=('x', 'y', 'z')):
     """ Split symbolic `expression` for a discretization step.
 
     Parameters:
@@ -120,6 +83,10 @@ def split_factors(expression):
     """
     assert not isinstance(expression, sympy.Add), \
         'Input expression must not be sympy.Add. It should be a single summand.'
+
+    momentum_names = ['k_{}'.format(s) for s in discrete_coordinates]
+    momentum_operators = sympy.symbols(momentum_names, commutative=False)
+
     output = {'rhs': [1], 'operator': [1], 'lhs': [1]}
 
     if isinstance(expression, sympy.Pow):
@@ -158,7 +125,55 @@ def split_factors(expression):
     return output
 
 
-def _discretize_summand(summand):
+def derivate(expression, operator):
+    """ Calculate derivate of expression for given momentum operator:
+
+    Parameters:
+    -----------
+    expression : sympy.Expr instance
+        Valid sympy expression containing functions to to be derivated.
+    operator : sympy.Symbol
+        Sympy symbol representing momentum operator.
+
+    Returns:
+    --------
+    expression : sympy.Expr instance
+        Derivated input expression.
+
+    Note:
+    -----
+    Space dependence of a function must be made using non commutative variables.
+    If symbol will be defined as commutative it will be ignored. Please see example.
+    Allowed momentum operaetor's name are 'k_x', 'k_y' or 'k_z'.
+
+    Examples:
+    ---------
+    >>> A = sympy.Function('A')
+    >>> x = sympy.Symbol('x', commutative=False)
+    >>> kx = sympy.Symbol('k_x')
+    >>> derivate(A(x), kx)
+    -I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))
+    """
+    if not isinstance(operator, sympy.Symbol):
+        raise TypeError("Input operator '{}' is not type sympy.Symbol.")
+
+    if operator.name not in ['k_x', 'k_y', 'k_z']:
+        raise ValueError("Input operator '{}' unkown.".format(operator))
+
+    if isinstance(expression, (int, float, sympy.Symbol)):
+        return 0
+    else:
+        coordinate_name = operator.name.split('_')[1]
+        coordinate = sympy.Symbol(coordinate_name, commutative=False)
+        h = sympy.Symbol('a_'+coordinate_name)
+
+        expr1 = expression.subs(coordinate, coordinate + h)
+        expr2 = expression.subs(coordinate, coordinate - h)
+        output = (expr1 - expr2) / 2 / h
+        return -sympy.I * sympy.expand(output)
+
+
+def _discretize_summand(summand, discrete_coordinates=('x', 'y', 'z')):
     """ Discretize one summand. """
     assert not isinstance(summand, sympy.Add), "Input should be one summand."
 
@@ -169,7 +184,7 @@ def _discretize_summand(summand):
         if isinstance(expr, sympy.Add):
             return do_stuff(expr.args[-1]) + do_stuff(sympy.Add(*expr.args[:-1]))
 
-        lhs, operator, rhs = split_factors(expr)
+        lhs, operator, rhs = split_factors(expr, discrete_coordinates)
         if rhs == 1 and operator != 1:
             return 0
         elif operator == 1:
@@ -182,7 +197,7 @@ def _discretize_summand(summand):
     return do_stuff(summand)
 
 
-def _discretize_expression(expression):
+def _discretize_expression(expression, discrete_coordinates=('x', 'y', 'z')):
     """ Discretize continous `expression` into discrete tb representation.
 
     Parameters:
@@ -203,12 +218,9 @@ def _discretize_expression(expression):
     """
 
     if not isinstance(expression, sympy.Expr):
-        raise TypeError('Input hamiltonian should be a valid sympy expression.')
+        raise TypeError('Input expression should be a valid sympy expression.')
 
-    if wf in expression.atoms(sympy.Function):
-        raise ValueError("Hamiltonian must not contain {}.".format(wf))
-
-    expression = sympy.expand(expression * wf)
+    expression = sympy.expand(expression)
 
     if expression.func == sympy.Add:
         summands = expression.args
@@ -217,10 +229,10 @@ def _discretize_expression(expression):
 
     outputs = []
     for summand in summands:
-        outputs.append(_discretize_summand(summand))
+        outputs.append(_discretize_summand(summand, discrete_coordinates))
 
     outputs = [extract_hoppings(summand) for summand in outputs]
-    outputs = [shortening(summand) for summand in outputs]
+    outputs = [shortening(summand, discrete_coordinates) for summand in outputs]
 
     discrete_expression = defaultdict(int)
     for summand in outputs:
@@ -230,7 +242,7 @@ def _discretize_expression(expression):
     return dict(discrete_expression)
 
 
-def discretize(hamiltonian):
+def discretize(hamiltonian, discrete_coordinates=('x', 'y', 'z')):
     """ Discretize continous `expression` into discrete tb representation.
 
     Parameters:
@@ -249,19 +261,26 @@ def discretize(hamiltonian):
     Recursive derivation implemented in _discretize_summand is applied
     on every summand. Shortening is applied before return on output.
     """
+    coordinates = sympy.symbols(discrete_coordinates, commutative=False)
+    wf = sympy.Function(wavefunction_name)(*coordinates)
+
+    if wf in hamiltonian.atoms(sympy.Function):
+        raise ValueError("Hamiltonian must not contain {}.".format(wf))
 
     if not isinstance(hamiltonian, sympy.Matrix):
-        return _discretize_expression(hamiltonian)
+        return _discretize_expression(hamiltonian * wf, discrete_coordinates)
 
     shape = hamiltonian.shape
 
     discrete_hamiltonian = defaultdict(lambda: sympy.zeros(*shape))
     for i,j in itertools.product(range(shape[0]), repeat=2):
-        hoppings = _discretize_expression(hamiltonian[i, j])
+        expression = hamiltonian[i, j] * wf
+        hoppings = _discretize_expression(expression, discrete_coordinates)
 
         for offset, hop in hoppings.items():
             discrete_hamiltonian[offset][i,j] += hop
     return discrete_hamiltonian
+
 
 # ************ Making kwant functions ***********
 def make_return_string(expr):
@@ -283,9 +302,7 @@ def make_return_string(expr):
     func_symbols = {sympy.Symbol(i.func.__name__) for i in
                     expr.atoms(AppliedUndef)}
 
-    free_symbols = {i for i in expr.free_symbols if i not in coord}
-    free_symbols = {i for i in free_symbols if i not in momentum_operators}
-
+    free_symbols = {i for i in expr.free_symbols if i not in coordinates}
     const_symbols = free_symbols - func_symbols
 
     output = lambdastr((), expr, printer=NumericPrinter)[len('lambda : '):]
@@ -294,7 +311,8 @@ def make_return_string(expr):
     return 'return {}'.format(output), func_symbols, const_symbols
 
 
-def assign_symbols(func_symbols, const_symbols, onsite=True):
+def assign_symbols(func_symbols, const_symbols, onsite=True,
+                   discrete_coordinates=('x', 'y', 'z')):
     """Generate a series of assingments defining a set of symbols.
 
     Parameters:
@@ -338,7 +356,7 @@ def assign_symbols(func_symbols, const_symbols, onsite=True):
     else:
         site = 'site2'
 
-    lines.insert(0, 'x, y, z = {}.pos'.format(site))
+    lines.insert(0, '{} = {}.pos'.format(', '.join(discrete_coordinates), site))
 
     return lines
 
@@ -409,13 +427,14 @@ def read_hopping_from_wf(inp_psi):
     >>> import discretizer
     >>> wf = discretizer.algorithms.wf
     >>> ax, ay, az = discretizer.algorithms.lattice_constants
-    >>> x, y, z = discretizer.algorithms.coord
+    >>> x, y, z = discretizer.algorithms.coordinates
     >>> subs = {x: x+ax, y: y + 2 * ay, z: z + 3 * az}
     >>> expr = wf.subs(subs)
     >>> read_hopping_from_wf(expr)
     (1, 2, 3)
     """
-    assert inp_psi.func == wf.func, 'Input should be correct wf used in module.'
+    assert inp_psi.func.__name__ == wavefunction_name, \
+        'Input should be function that represents wavefunction in module.'
     offset = []
     for argument in inp_psi.args:
         temp = sympy.expand(argument)
@@ -436,7 +455,6 @@ def read_hopping_from_wf(inp_psi):
             print('Argument of \inp_psi is neither a sum nor a single space variable.')
     return tuple(offset)
 
-
 # This function will not have the shortening included
 def extract_hoppings(expr):
     # this line should be unneccessary in the long run. Now I want to avoid errors due to wrong formats of the input.
@@ -444,49 +462,40 @@ def extract_hoppings(expr):
 
     # The output will be stored in a dictionary, with terms for each hopping kind
     # This format is probably not good in the long run
-    hoppings = {}
+    hoppings = defaultdict(int)
 
     if expr.func == sympy.Add:
         for summand in expr.args:
             #find a way to make it readable
-            if not summand.func == wf.func:
+            if not summand.func.__name__ == wavefunction_name:
                 for i in range(len(summand.args)):
-                    if summand.args[i].func == wf.func:
+                    if summand.args[i].func.__name__ == wavefunction_name:
                         index = i
                 if index < len(summand.args) - 1:
                     print('Psi is not in the very end of the term. Output will be wrong!')
-
-                try:
-                    hoppings[read_hopping_from_wf(summand.args[-1])] += sympy.Mul(*summand.args[:-1])
-                except:
-                    hoppings[read_hopping_from_wf(summand.args[-1])] = sympy.Mul(*summand.args[:-1])
+                hoppings[read_hopping_from_wf(summand.args[-1])] += sympy.Mul(*summand.args[:-1])
             else:
-                try:
-                    hoppings[read_hopping_from_wf(summand)] += 1
-                except:
-                    hoppings[read_hopping_from_wf(summand)] = 1
+                hoppings[read_hopping_from_wf(summand)] += 1
 
     else:
-        if not expr.func == wf.func:
+        if not expr.func.__name__ == wavefunction_name:
             for i in range(len(expr.args)):
-                if expr.args[i].func == wf.func:
+                if expr.args[i].func.__name__ == wavefunction_name:
                     index = i
             if index < len(expr.args) - 1:
                 print('Psi is not in the very end of the term. Output will be wrong!')
 
-            try:
-                hoppings[read_hopping_from_wf(expr.args[-1])] += sympy.Mul(*expr.args[:-1])
-            except:
-                hoppings[read_hopping_from_wf(expr.args[-1])] = sympy.Mul(*expr.args[:-1])
+            hoppings[read_hopping_from_wf(expr.args[-1])] += sympy.Mul(*expr.args[:-1])
         else:
-            try:
-                hoppings[read_hopping_from_wf(expr)] += 1
-            except:
-                hoppings[read_hopping_from_wf(expr)] = 1
+            hoppings[read_hopping_from_wf(expr)] += 1
     return hoppings
 
 
-def shortening(hoppings):
+def shortening(hoppings, discrete_coordinates=('x', 'y', 'z')):
+
+    tmps = ['a_{}'.format(s) for s in discrete_coordinates]
+    lattice_constants = sympy.symbols(tmps)
+
     # make a list of all hopping kinds we have to consider during the shortening
     hops_kinds = np.array(list(hoppings))
     # find the longest hopping range in each direction
@@ -520,6 +529,6 @@ def shortening(hoppings):
 
     # We don't need separate a_x, a_y and a_z anymore.
     for key, val in short_hopping.items():
-        short_hopping[key] = val.subs({i: a for i in lattice_constants})
+        short_hopping[key] = val.subs({i: a for i in sympy.symbols('a_x a_y a_z')})
 
     return short_hopping
