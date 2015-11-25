@@ -1,7 +1,5 @@
 # To do list
 * shortening and reading hoppings (to be tested)
-* generalazing it to work on matrices (important)
-* transforming it into functions (check how Anton did it)
 * writing tests, lot of tests (working on it)
 * making package (almost done)
 * wrapper of string input (nice, but least on priorty)
