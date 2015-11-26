@@ -13,11 +13,7 @@ class NumericPrinter(LambdaPrinter):
 
 
 # ************************** Some globals *********************************
-coordinates = sympy.symbols('x y z', commutative=False)
 wavefunction_name = 'Psi'
-
-lattice_constants = sympy.symbols('a_x a_y a_z')
-a = sympy.Symbol('a')
 
 
 # **************** Operation on sympy expressions **************************
@@ -492,9 +488,10 @@ def extract_hoppings(expr):
 
 
 def shortening(hoppings, discrete_coordinates=('x', 'y', 'z')):
-
+    """ Perform shortening of hoppings."""
     tmps = ['a_{}'.format(s) for s in discrete_coordinates]
     lattice_constants = sympy.symbols(tmps)
+    a = sympy.Symbol('a')
 
     # make a list of all hopping kinds we have to consider during the shortening
     hops_kinds = np.array(list(hoppings))
@@ -528,6 +525,7 @@ def shortening(hoppings, discrete_coordinates=('x', 'y', 'z')):
             short_hopping[short_hopping_kind] = short_hopping[short_hopping_kind].subs(subs)
 
     # We don't need separate a_x, a_y and a_z anymore.
+
     for key, val in short_hopping.items():
         short_hopping[key] = val.subs({i: a for i in sympy.symbols('a_x a_y a_z')})
 
