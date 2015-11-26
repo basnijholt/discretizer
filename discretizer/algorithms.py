@@ -127,25 +127,21 @@ def derivate(expression, operator):
     Parameters:
     -----------
     expression : sympy.Expr instance
-        Valid sympy expression containing functions to to be derivated.
+        Sympy expression containing functions to to be derivated.
     operator : sympy.Symbol
         Sympy symbol representing momentum operator.
 
     Returns:
     --------
-    expression : sympy.Expr instance
+    output : sympy.Expr instance
         Derivated input expression.
-
-    Note:
-    -----
-    Space dependence of a function must be made using non commutative variables.
-    If symbol will be defined as commutative it will be ignored. Please see example.
-    Allowed momentum operaetor's name are 'k_x', 'k_y' or 'k_z'.
 
     Examples:
     ---------
+    >>> from discretizer.algorithms import derivate
+    >>> import sympy
     >>> A = sympy.Function('A')
-    >>> x = sympy.Symbol('x', commutative=False)
+    >>> x = sympy.Symbol('x')
     >>> kx = sympy.Symbol('k_x')
     >>> derivate(A(x), kx)
     -I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))
@@ -160,11 +156,12 @@ def derivate(expression, operator):
         return 0
     else:
         coordinate_name = operator.name.split('_')[1]
-        coordinate = sympy.Symbol(coordinate_name, commutative=False)
+        ct = sympy.Symbol(coordinate_name, commutative=True)
+        cf = sympy.Symbol(coordinate_name, commutative=False)
         h = sympy.Symbol('a_'+coordinate_name)
 
-        expr1 = expression.subs(coordinate, coordinate + h)
-        expr2 = expression.subs(coordinate, coordinate - h)
+        expr1 = expression.subs({ct: ct + h, cf: cf + h})
+        expr2 = expression.subs({ct: ct - h, cf: cf - h})
         output = (expr1 - expr2) / 2 / h
         return -sympy.I * sympy.expand(output)
 
