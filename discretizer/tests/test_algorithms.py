@@ -41,14 +41,14 @@ def test_split_factors_1():
     }
 
     for inp, out in test.items():
-        got = split_factors(inp)
+        got = split_factors(inp, discrete_coordinates={'x', 'y', 'z'})
         assert  got == out,\
             "Should be: split_factors({})=={}. Not {}".format(inp, out, got)
 
 
 @raises(AssertionError)
 def test_split_factors_2():
-    split_factors(A+B)
+    split_factors(A+B, discrete_coordinates={'x', 'y', 'z'})
 
 
 def test_derivate_1():
@@ -89,14 +89,14 @@ def test_discretize_summand_1():
     }
 
     for inp, out in test.items():
-        got = (_discretize_summand(inp))
+        got = _discretize_summand(inp, discrete_coordinates={'x', 'y', 'z'})
         out = sympy.sympify(out, locals=ns)
         assert  sympy.simplify(sympy.expand(got - out)) == 0,\
             "Should be: _discretize_summand({})=={}. Not {}".format(inp, out, got)
 
 @raises(AssertionError)
 def test_discretize_summand_2():
-    _discretize_summand(kx*A(x)+ B(x))
+    _discretize_summand(kx*A(x)+ B(x), discrete_coordinates={'x', 'y', 'z'})
 
 
 def test_read_hoppings_from_wf_1():

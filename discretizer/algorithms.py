@@ -17,42 +17,65 @@ wavefunction_name = 'Psi'
 
 
 # **************** Operation on sympy expressions **************************
-def substitute_functions(expression, space_dependent={}):
-    """ Substitute `AppliedUndef` functions into expression.
+def substitute_functions(expression, discrete_coordinates=None,
+                         space_dependent=None):
+    """Substitute `AppliedUndef` functions into expression."""
 
-    Symbols defined in space_dependent will be substitute with a
-    function of specified coordinates.
+    def check_spatial_dependence(expression):
+        """Check which spatial coordinates are present in hamiltonian."""
+        found_coordinates = set()
+        for s in expression.atoms(sympy.Symbol):
+            s = s.name
+            if s in ['x', 'y', 'z']:
+                found_coordinates.add(s)
+            if s in ['k_x', 'k_y', 'k_z']:
+                found_coordinates.add(s.split('_')[1])
+        return found_coordinates
 
-    Parameters:
-    -----------
-    expression : sympy.Expr instance
-    space_dependent : dict
-        Dictionary list which keys are symbols standing for a space dependent
-        parameters and values are list or tuple with strings representing names
-        of space dependent coordinates.
+    if discrete_coordinates is None:
+        discrete_coordinates = check_spatial_dependence(expression)
 
-    Returns:
-    --------
-    expression : sympy.Expr instance
-        Expression containing space dependent functions.
+    if space_dependent is None:
+        space_dependent = {}
 
-    """
+    elif isinstance(space_dependent, (tuple, list, set)):
+        coordinates = list(sorted(discrete_coordinates))
+        space_dependent = {s: coordinates for s in space_dependent}
+
+    elif isinstance(space_dependent, dict):
+        for v in space_dependent.values():
+            if not isinstance(v, set):
+                raise TypeError('If discrete_coordinates is of type dict ' +
+                                 'its values should be of type set.')
+            discrete_coordinates = discrete_coordinates | v
+
+        space_dependent = {k: list(sorted(v)) for k,v in space_dependent.items()}
+
+    else:
+        raise TypeError("space_dependent should be of type None, tuple, list, set or dict")
+
     subs = {}
     for s, v in space_dependent.items():
-        if isinstance(v, (tuple, list)):
-            for i in v:
-                assert i in ['x', 'y', 'z'], \
-                    "Argument '{}' should be list of ['x', 'y', 'z'].".format(i)
+        if isinstance(v, (tuple, list, set)):
             subs[s] = s(*sympy.symbols(v, commutative=False))
         else:
-            assert v in ['x', 'y', 'z'], \
-                "Argument '{}' should be list of ['x', 'y', 'z'].".format(v)
             subs[s] = s(sympy.Symbol(v, commutative=False))
 
-    return expression.subs(subs)
+    expression = expression.subs(subs)
+
+    coordinates = [sympy.Symbol(s, commutative=False) for s in discrete_coordinates]
+    momentum_names = ['k_{}'.format(s) for s in discrete_coordinates]
+    momentum_operators = sympy.symbols(momentum_names, commutative=False)
+
+    constants = expression.atoms(sympy.Symbol)
+    constants = constants - set(momentum_operators) - set(coordinates)
+    subs = {s: sympy.Symbol(s.name) for s in constants}
+    expression = expression.subs(subs)
+
+    return expression, discrete_coordinates
 
 
-def split_factors(expression, discrete_coordinates=('x', 'y', 'z')):
+def split_factors(expression, discrete_coordinates):
     """ Split symbolic `expression` for a discretization step.
 
     Parameters:
@@ -166,7 +189,7 @@ def derivate(expression, operator):
         return -sympy.I * sympy.expand(output)
 
 
-def _discretize_summand(summand, discrete_coordinates=('x', 'y', 'z')):
+def _discretize_summand(summand, discrete_coordinates):
     """ Discretize one summand. """
     assert not isinstance(summand, sympy.Add), "Input should be one summand."
 
@@ -190,7 +213,7 @@ def _discretize_summand(summand, discrete_coordinates=('x', 'y', 'z')):
     return do_stuff(summand)
 
 
-def _discretize_expression(expression, discrete_coordinates=('x', 'y', 'z')):
+def _discretize_expression(expression, discrete_coordinates):
     """ Discretize continous `expression` into discrete tb representation.
 
     Parameters:
@@ -202,7 +225,7 @@ def _discretize_expression(expression, discrete_coordinates=('x', 'y', 'z')):
     --------
     discrete_expression: dict
         dict in which key is offset of hopping ((0, 0, 0) for onsite)
-        and value is corresponding hopping (onsite) value.
+        and value is corresponding symbolic hopping (onsite).
 
     Note:
     -----
@@ -235,7 +258,7 @@ def _discretize_expression(expression, discrete_coordinates=('x', 'y', 'z')):
     return dict(discrete_expression)
 
 
-def discretize(hamiltonian, discrete_coordinates=('x', 'y', 'z')):
+def discretize(hamiltonian, discrete_coordinates):
     """ Discretize continous `expression` into discrete tb representation.
 
     Parameters:
@@ -247,14 +270,15 @@ def discretize(hamiltonian, discrete_coordinates=('x', 'y', 'z')):
     --------
     discrete_hamiltonian: dict
         dict in which key is offset of hopping ((0, 0, 0) for onsite)
-        and value is corresponding hopping (onsite) value.
+        and value is corresponding symbolic hopping (onsite).
 
     Note:
     -----
     Recursive derivation implemented in _discretize_summand is applied
     on every summand. Shortening is applied before return on output.
     """
-    coordinates = sympy.symbols(discrete_coordinates, commutative=False)
+    coordinates_names = sorted(list(discrete_coordinates))
+    coordinates = [sympy.Symbol(c, commutative=False) for c in coordinates_names]
     wf = sympy.Function(wavefunction_name)(*coordinates)
 
     if wf in hamiltonian.atoms(sympy.Function):
@@ -295,7 +319,7 @@ def make_return_string(expr):
     func_symbols = {sympy.Symbol(i.func.__name__) for i in
                     expr.atoms(AppliedUndef)}
 
-    free_symbols = {i for i in expr.free_symbols if i not in coordinates}
+    free_symbols = {i for i in expr.free_symbols if i.name not in ['x', 'y', 'z']}
     const_symbols = free_symbols - func_symbols
 
     output = lambdastr((), expr, printer=NumericPrinter)[len('lambda : '):]
@@ -304,8 +328,8 @@ def make_return_string(expr):
     return 'return {}'.format(output), func_symbols, const_symbols
 
 
-def assign_symbols(func_symbols, const_symbols, onsite=True,
-                   discrete_coordinates=('x', 'y', 'z')):
+def assign_symbols(func_symbols, const_symbols, discrete_coordinates,
+                   onsite=True):
     """Generate a series of assingments defining a set of symbols.
 
     Parameters:
@@ -390,15 +414,51 @@ def value_function(content, name='_anonymous_func', onsite=True, verbose=False):
     return namespace[name]
 
 
-def make_kwant_functions(discrete_hamiltonian, verbose=False):
+def make_kwant_functions(discrete_hamiltonian, discrete_coordinates,
+                         verbose=False):
     """Transform discrete hamiltonian into valid kwant functions.
 
     Parameters:
     -----------
+    discrete_hamiltonian: dict
+        dict in which key is offset of hopping ((0, 0, 0) for onsite)
+        and value is corresponding symbolic hopping (onsite).
 
+    verbose : bool
+        Whether the function bodies should be printed.
+
+    discrete_coordinates : tuple/list
+        List of discrete coordinates. Must corresponds to offsets in
+        discrete_hamiltonian keys.
+
+    Note:
+    -----
 
     """
-    pass
+    dim = len(discrete_coordinates)
+    if not all(len(i)==dim for i in list(discrete_hamiltonian.keys())):
+        raise ValueError("Dimension of offsets and discrete_coordinates" +
+                         "do not match.")
+
+    functions = {}
+    for offset, hopping in discrete_hamiltonian.items():
+        onsite = True if all(i == 0 for i in offset) else False
+        return_string, func_symbols, const_symbols = make_return_string(hopping)
+        lines = assign_symbols(func_symbols, const_symbols, onsite=onsite,
+                               discrete_coordinates=discrete_coordinates)
+        lines.append(return_string)
+
+        if verbose:
+            print("Function generated for {}:".format(offset))
+            f = value_function(lines, verbose=verbose, onsite=onsite)
+            print()
+        else:
+            f = value_function(lines, verbose=verbose, onsite=onsite)
+
+        functions[offset] = f
+
+
+    return functions
 
 
 # ****** extracting hoppings ***********
@@ -484,8 +544,9 @@ def extract_hoppings(expr):
     return hoppings
 
 
-def shortening(hoppings, discrete_coordinates=('x', 'y', 'z')):
+def shortening(hoppings, discrete_coordinates):
     """ Perform shortening of hoppings."""
+    discrete_coordinates = sorted(list(discrete_coordinates))
     tmps = ['a_{}'.format(s) for s in discrete_coordinates]
     lattice_constants = sympy.symbols(tmps)
     a = sympy.Symbol('a')
