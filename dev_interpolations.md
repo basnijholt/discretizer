@@ -53,6 +53,10 @@ state:
 ```
 
 ```python
+>>> import numpy as np
+```
+
+```python
 >>> def search_Function_in_summand(expr, path):
 ...     if expr.func = sympy.Mul:
 ...         for i in np.range(len(expr.args)):
@@ -68,10 +72,27 @@ state:
 ```
 
 ```python
+>>> def follow_path(expr, path):
+...     res = expr
+...     for i in np.arange(len(path)):
+...         res = res.args[path[i]]
+...     return res
+...
+>>> def interchange(expr, sub, path):
+...     res = sub
+...     for i in np.arange(len(path)):
+...         temp = follow_path(expr, path[:-(i+1)])
+...         args = list(temp.args)
+...         args[path[i]] = res
+...         res = temp.func(*tuple(args))
+...     return res
+...
 >>> def interpolate_Function(expr):
 ...     path = 'None'
 ...     factor = 'None'
-...     interupt_recursion = True
+...     interupt = False
+...     summand_0 = 'None'
+...     summand_1 = 'None'
 ...     for i in np.arange(len(expr.args)):
 ...         argument = sympy.expand(expr.args[i])
 ...         if argument.func == sympy.Add:
@@ -85,40 +106,21 @@ state:
 ...                                              sympy.Mul(*summand.args[k+1:]))
 ...                             #print(temp)
 ...                         if not temp == int(temp):
-...                             if not factor == 'None':
-...                                 interupt_recursion = False
 ...                             #print('found one')
 ...                             factor = (temp)
 ...                             path = np.array([i, j, k])
-...     sign = np.sign(factor)
-...     offsets = np.array([int(factor), sign * (int(sign * factor) + 1)])
-...     weights = 1/np.abs(offsets - factor)
-...     weights = weights/np.sum(weights)
-...     #vectoriziation seems not to work for sympy expressions^^
-...     #first only make the new offsets
-...     summand_0 = sympy.Mul(offsets[0]*expr.args[path[0]].args[path[1]].args[path[2]])
-...     summand_1 = sympy.Mul(offsets[1]*expr.args[path[0]].args[path[1]].args[path[2]])
-...     #rebuild the whole (single) argument
-...     summand_0 = sympy.Add(sympy.Add(summand_0, *expr.args[path[0]].args[:path[1]]),
-...                           *expr.args[path[0]].args[path[1]+1:])
-...     summand_1 = sympy.Add(sympy.Add(summand_1, *expr.args[path[0]].args[:path[1]]),
-...                           *expr.args[path[0]].args[path[1]+1:])
-...     #rebuild the function with all arguments (also the unchanghed ones)
-...     #In opposition to addition or multiplication, we have to pass
-...     #all arguments to the function at once now, so we start by
-...     #creating a list of the arguments that we need.
-...     temp_0 = []
-...     temp_1 = []
-...     for i in np.arange(len(expr.args)):
-...         if not i == path[0]:
-...             temp_0.append(expr.args[i])
-...             temp_1.append(expr.args[i])
-...         else:
-...             temp_0.append(summand_0)
-...             temp_1.append(summand_1)
-...     summand_0 = weights[0] * expr.func(*tuple(temp_0))
-...     summand_1 = weights[1] * expr.func(*tuple(temp_1))
-...     return sympy.expand(summand_0 + summand_1)
+...     if not factor == 'None':
+...         interupt = True
+...
+...         sign = np.sign(factor)
+...         offsets = np.array([int(factor), sign * (int(sign * factor) + 1)])
+...         weights = 1/np.abs(offsets - factor)
+...         weights = weights/np.sum(weights)
+...
+...         res = (  weights[0] * interchange(expr, offsets[0] * sympy.Symbol('a'), path[:-1])
+...                + weights[1] * interchange(expr, offsets[1] * sympy.Symbol('a'), path[:-1]))
+...
+...     return sympy.expand(res), interupt
 ```
 
 ```python
@@ -132,37 +134,56 @@ A⎜x, - ─── + y⎟
 
 ```python
 >>> interpolate_Function(test)
-3⋅A(x, y)   2⋅A(x, -a + y)
-───────── + ──────────────
-    5             5
+(3*A(x, y)/5 + 2*A(x, -a + y)/5, True)
 ```
 
 ```python
->>> import numpy as np
+>>> def interpolate(expr):
+...
+...     for depth in np.arange(3):
+...
+...             if isinstance(expr.args[i], sympy.Function):
+...                 path = np.array([i])
+...                 temp, change = interpolate_Function(follow_path(expr, path))
 ```
 
 ```python
->>> test.args[1].args[1].args
-(1/2, a)
+>>> test_2 = A*test
+>>> test_2
+         ⎛     2⋅a    ⎞
+A(x, y)⋅A⎜x, - ─── + y⎟
+         ⎝      5     ⎠
 ```
 
 ```python
->>> test.args
-(x, a + y)
+>>> interpolate(test_2)
+False
+True
 ```
 
 ```python
->>> int(3.5)
-3
+>>> def search()
 ```
 
 ```python
->>> bla=[0, 1, 2, 3]
+>>> np.linspace(1,17,17)[:-17]
+array([], dtype=float64)
 ```
 
 ```python
->>> tuple(bla)
-(0, 1, 2, 3)
+>>> print(test)
+>>> print(follow_path(test, np.array([1, 1])))
+>>> interchange(test, a, np.array([1,1]))
+A(x, -2*a/5 + y)
+-2*a/5
+A(x, a + y)
+```
+
+```python
+>>> follow_path(test, np.array([1,1]))
+-2⋅a 
+─────
+  5
 ```
 
 ```python
