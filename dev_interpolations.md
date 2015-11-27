@@ -53,192 +53,6 @@ state:
 ```
 
 ```python
->>> def inputs_for_sebastians_functions(hamiltonian, coordinates):
-...     wf = sympy.Function(wavefunction_name)(*coordinates)
-...     expression = sympy.expand(hamiltonian * wf)
-...
-...     if expression.func == sympy.Add:
-...         summands = expression.args
-...     else:
-...         summands = [expression]
-...
-...     outputs = []
-...     for summand in summands:
-...         outputs.append(_discretize_summand(summand))
-...     return outputs
-```
-
-```python
->>> x,y,z = sympy.symbols('x y z', commutative=False)
->>> ax, ay, az = sympy.symbols('a_x a_y a_z')
-...
->>> wf = sympy.Function(wavefunction_name)
->>> psi = wf(x, z)
-```
-
-```python
->>> expr = psi.subs({x: x-2*ax, y: y-az}); expr
-Ψ(-2⋅aₓ + x, z)
-```
-
-```python
->>> read_hopping_from_wf(expr)
-(-2, 0)
-```
-
-### Test1
-
-```python
->>> import discretizer
-```
-
-```python
->>> from discretizer.algorithms import extract_hoppings
->>> from discretizer.algorithms import shortening
-```
-
-```python
->>> kx, ky, kz = discretizer.momentum_operators
-```
-
-```python
->>> test = inputs_for_sebastians_functions(kx, coordinates=(x,));test
-⎡   ⎛  Ψ(-aₓ + x)   Ψ(aₓ + x)⎞⎤
-⎢-ⅈ⋅⎜- ────────── + ─────────⎟⎥
-⎣   ⎝     2⋅aₓ         2⋅aₓ  ⎠⎦
-```
-
-```python
->>> hop = [extract_hoppings(summand) for summand in test]
->>> hop
-⎡⎧        ⅈ          -ⅈ  ⎫⎤
-⎢⎨(-1,): ────, (1,): ────⎬⎥
-⎣⎩       2⋅aₓ        2⋅aₓ⎭⎦
-```
-
-```python
->>> [shortening(summand) for summand in hop]
-⎡⎧        ⅈ         -ⅈ ⎫⎤
-⎢⎨(-1,): ───, (1,): ───⎬⎥
-⎣⎩       2⋅a        2⋅a⎭⎦
-```
-
-### Test2
-
-```python
->>> # A = sympy.Function('A')(x, y,z)
-... # test = inputs_for_sebastians_functions(kz*A*kz, coordinates=[x, y, z]);test
-...
-... A = sympy.Function('A')(y,z)
->>> test = inputs_for_sebastians_functions(kz*A*kz, coordinates=[y, z]);test
-⎡A(y, -a_z + z)⋅Ψ(y, z)   A(y, -a_z + z)⋅Ψ(y, -2⋅a_z + z)   A(y, a_z + z)⋅Ψ(y,
-⎢────────────────────── - ─────────────────────────────── + ──────────────────
-⎢             2                             2                            2    
-⎣        4⋅a_z                         4⋅a_z                        4⋅a_z     
-
- z)   A(y, a_z + z)⋅Ψ(y, 2⋅a_z + z)⎤
-─── - ─────────────────────────────⎥
-                       2           ⎥
-                  4⋅a_z            ⎦
-```
-
-```python
->>> hop = [extract_hoppings(summand) for summand in test]
->>> hop
-⎡⎧         -A(y, -a_z + z)           A(y, -a_z + z)   A(y, a_z + z)          -
-⎢⎪(0, -2): ────────────────, (0, 0): ────────────── + ─────────────, (0, 2): ─
-⎢⎨                   2                        2                2              
-⎢⎪              4⋅a_z                    4⋅a_z            4⋅a_z               
-⎣⎩                                                                            
-
-A(y, a_z + z) ⎫⎤
-──────────────⎪⎥
-         2    ⎬⎥
-    4⋅a_z     ⎪⎥
-              ⎭⎦
-```
-
-```python
->>> [shortening(summand, discrete_coordinates=['y', 'z']) for summand in hop]
-⎡⎧           ⎛     a    ⎞            ⎛     a    ⎞    ⎛   a    ⎞            ⎛  
-⎢⎪         -A⎜y, - ─ + z⎟           A⎜y, - ─ + z⎟   A⎜y, ─ + z⎟          -A⎜y,
-⎢⎪           ⎝     2    ⎠            ⎝     2    ⎠    ⎝   2    ⎠            ⎝  
-⎢⎨(0, -1): ───────────────, (0, 0): ───────────── + ───────────, (0, 1): ─────
-⎢⎪                 2                       2              2                   
-⎢⎪                a                       a              a                    
-⎣⎩                                                                            
-
- a    ⎞ ⎫⎤
- ─ + z⎟ ⎪⎥
- 2    ⎠ ⎪⎥
-────────⎬⎥
-  2     ⎪⎥
- a      ⎪⎥
-        ⎭⎦
-```
-
-### Test3
-
-```python
->>> A = sympy.Function('A')(x, y,z)
->>> #test = inputs_for_sebastians_functions(kz*A*kz, coordinates=[x, y, z]);test
-```
-
-```python
->>> hop = [extract_hoppings(summand) for summand in test]
->>> hop
-⎡⎧            -A(x, y, -a_z + z)              A(x, y, -a_z + z)   A(x, y, a_z 
-⎢⎪(0, 0, -2): ───────────────────, (0, 0, 0): ───────────────── + ────────────
-⎢⎨                        2                              2                  2 
-⎢⎪                   4⋅a_z                          4⋅a_z              4⋅a_z  
-⎣⎩                                                                            
-
-+ z)             -A(x, y, a_z + z) ⎫⎤
-────, (0, 0, 2): ──────────────────⎪⎥
-                            2      ⎬⎥
-                       4⋅a_z       ⎪⎥
-                                   ⎭⎦
-```
-
-```python
->>> [shortening(summand) for summand in hop]
-⎡⎧              ⎛        a    ⎞               ⎛        a    ⎞    ⎛      a    ⎞
-⎢⎪            -A⎜x, y, - ─ + z⎟              A⎜x, y, - ─ + z⎟   A⎜x, y, ─ + z⎟
-⎢⎪              ⎝        2    ⎠               ⎝        2    ⎠    ⎝      2    ⎠
-⎢⎨(0, 0, -1): ──────────────────, (0, 0, 0): ──────────────── + ──────────────
-⎢⎪                     2                             2                 2      
-⎢⎪                    a                             a                 a       
-⎣⎩                                                                            
-
-               ⎛      a    ⎞ ⎫⎤
-             -A⎜x, y, ─ + z⎟ ⎪⎥
-               ⎝      2    ⎠ ⎪⎥
-, (0, 0, 1): ────────────────⎬⎥
-                     2       ⎪⎥
-                    a        ⎪⎥
-                             ⎭⎦
-```
-
-### Test3
-
-```python
->>> A = sympy.Function('A')(x, y)
->>> #test = inputs_for_sebastians_functions(kx + A + 5, coordinates=[x, y]);test
-```
-
-```python
->>> hop = [extract_hoppings(summand) for summand in test]
->>> hop
-⎡             ⎧          ⅈ            -ⅈ  ⎫                   ⎤
-⎢{(0, 0): 5}, ⎨(-1, 0): ────, (1, 0): ────⎬, {(0, 0): A(x, y)}⎥
-⎣             ⎩         2⋅aₓ          2⋅aₓ⎭                   ⎦
-```
-
-```python
-
-```
-
-```python
 >>> def search_Function_in_summand(expr, path):
 ...     if expr.func = sympy.Mul:
 ...         for i in np.range(len(expr.args)):
@@ -277,10 +91,34 @@ A(y, a_z + z) ⎫⎤
 ...                             factor = (temp)
 ...                             path = np.array([i, j, k])
 ...     sign = np.sign(factor)
-...     offsets = np.array([int(factor), sign*(int(sign * factor) + 1)])
-...     weights = 1/np.abs(offsets-factor)
+...     offsets = np.array([int(factor), sign * (int(sign * factor) + 1)])
+...     weights = 1/np.abs(offsets - factor)
 ...     weights = weights/np.sum(weights)
-...     return offsets, weights
+...     #vectoriziation seems not to work for sympy expressions^^
+...     #first only make the new offsets
+...     summand_0 = sympy.Mul(offsets[0]*expr.args[path[0]].args[path[1]].args[path[2]])
+...     summand_1 = sympy.Mul(offsets[1]*expr.args[path[0]].args[path[1]].args[path[2]])
+...     #rebuild the whole (single) argument
+...     summand_0 = sympy.Add(sympy.Add(summand_0, *expr.args[path[0]].args[:path[1]]),
+...                           *expr.args[path[0]].args[path[1]+1:])
+...     summand_1 = sympy.Add(sympy.Add(summand_1, *expr.args[path[0]].args[:path[1]]),
+...                           *expr.args[path[0]].args[path[1]+1:])
+...     #rebuild the function with all arguments (also the unchanghed ones)
+...     #In opposition to addition or multiplication, we have to pass
+...     #all arguments to the function at once now, so we start by
+...     #creating a list of the arguments that we need.
+...     temp_0 = []
+...     temp_1 = []
+...     for i in np.arange(len(expr.args)):
+...         if not i == path[0]:
+...             temp_0.append(expr.args[i])
+...             temp_1.append(expr.args[i])
+...         else:
+...             temp_0.append(summand_0)
+...             temp_1.append(summand_1)
+...     summand_0 = weights[0] * expr.func(*tuple(temp_0))
+...     summand_1 = weights[1] * expr.func(*tuple(temp_1))
+...     return sympy.expand(summand_0 + summand_1)
 ```
 
 ```python
@@ -294,7 +132,9 @@ A⎜x, - ─── + y⎟
 
 ```python
 >>> interpolate_Function(test)
-(array([ 0, -1]), array([3/5, 2/5], dtype=object))
+3⋅A(x, y)   2⋅A(x, -a + y)
+───────── + ──────────────
+    5             5
 ```
 
 ```python
@@ -314,6 +154,15 @@ A⎜x, - ─── + y⎟
 ```python
 >>> int(3.5)
 3
+```
+
+```python
+>>> bla=[0, 1, 2, 3]
+```
+
+```python
+>>> tuple(bla)
+(0, 1, 2, 3)
 ```
 
 ```python
