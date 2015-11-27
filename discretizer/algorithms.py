@@ -18,7 +18,7 @@ wavefunction_name = 'Psi'
 # ************************* Main interface functions ***********************
 def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
           verbose=False, symbolic_output=False):
-
+    """Just testing."""
     tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
     hamiltonian, discrete_coordinates = tmp
 
@@ -349,6 +349,7 @@ def make_return_string(expr):
     free_symbols = {i for i in expr.free_symbols if i.name not in ['x', 'y', 'z']}
     const_symbols = free_symbols - func_symbols
 
+    expr = expr.subs(sympy.I, sympy.Symbol('1.j')) # quick hack
     output = lambdastr((), expr, printer=NumericPrinter)[len('lambda : '):]
     output = output.replace('MutableDenseMatrix', 'np.array')
 
@@ -439,6 +440,7 @@ def value_function(content, name='_anonymous_func', onsite=True, verbose=False):
     namespace = {}
     if verbose:
         print(func_code)
+    exec("import numpy as np", namespace)
     exec(func_code, namespace)
     return namespace[name]
 
