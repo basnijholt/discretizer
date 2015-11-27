@@ -24,6 +24,7 @@ def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
 
     if verbose:
         print('Discrete coordinates set to: ', sorted(discrete_coordinates))
+        print()
 
     discrete_hamiltonian = discretize(hamiltonian, discrete_coordinates)
 
@@ -388,11 +389,13 @@ def assign_symbols(func_symbols, const_symbols, discrete_coordinates,
     func_names = [i.name for i in func_symbols]
     const_names = [i.name for i in const_symbols]
 
-    lines.insert(0, ', '.join(func_names) + ' = p.' +
-                 ', p.'.join(func_names))
+    if func_names:
+        lines.insert(0, ', '.join(func_names) + ' = p.' +
+                     ', p.'.join(func_names))
 
-    lines.insert(0, ', '.join(const_names) + ' = p.' +
-                 ', p.'.join(const_names))
+    if const_names:
+        lines.insert(0, ', '.join(const_names) + ' = p.' +
+                     ', p.'.join(const_names))
 
     if onsite:
         site = 'site'
@@ -482,7 +485,6 @@ def make_kwant_functions(discrete_hamiltonian, discrete_coordinates,
             f = value_function(lines, verbose=verbose, onsite=onsite)
 
         functions[offset] = f
-
 
     return functions
 
