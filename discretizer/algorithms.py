@@ -15,11 +15,34 @@ class NumericPrinter(LambdaPrinter):
 # ************************** Some globals *********************************
 wavefunction_name = 'Psi'
 
+# ************************* Main interface functions ***********************
+def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
+          verbose=False, symbolic_output=False):
+
+    tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
+    hamiltonian, discrete_coordinates = tmp
+
+    if verbose:
+        print('Discrete coordinates set to: ', sorted(discrete_coordinates))
+
+    discrete_hamiltonian = discretize(hamiltonian, discrete_coordinates)
+
+    if symbolic_output:
+        return discrete_hamiltonian
+
+    tb = make_kwant_functions(discrete_hamiltonian, discrete_coordinates, verbose)
+    return tb
+
 
 # **************** Operation on sympy expressions **************************
 def substitute_functions(expression, discrete_coordinates=None,
                          space_dependent=None):
     """Substitute `AppliedUndef` functions into expression."""
+
+    if isinstance(expression, (int, float, sympy.Integer, sympy.Float)):
+        if discrete_coordinates is None:
+            discrete_coordinates = set()
+        return expression, discrete_coordinates
 
     def check_spatial_dependence(expression):
         """Check which spatial coordinates are present in hamiltonian."""
@@ -232,6 +255,9 @@ def _discretize_expression(expression, discrete_coordinates):
     Recursive derivation implemented in _discretize_summand is applied
     on every summand. Shortening is applied before return on output.
     """
+    if isinstance(expression, (int, float, sympy.Integer, sympy.Float)):
+        n = len(discrete_coordinates)
+        return {(tuple(0 for i in range(n))): expression}
 
     if not isinstance(expression, sympy.Expr):
         raise TypeError('Input expression should be a valid sympy expression.')
