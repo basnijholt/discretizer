@@ -236,7 +236,14 @@ def _discretize_expression(expression, discrete_coordinates):
     if not isinstance(expression, sympy.Expr):
         raise TypeError('Input expression should be a valid sympy expression.')
 
-    expression = sympy.expand(expression)
+    coordinates_names = sorted(list(discrete_coordinates))
+    coordinates = [sympy.Symbol(c, commutative=False) for c in coordinates_names]
+    wf = sympy.Function(wavefunction_name)(*coordinates)
+
+    if wf in expression.atoms(sympy.Function):
+        raise ValueError("Input expression must not contain {}.".format(wf))
+
+    expression = sympy.expand(expression*wf)
 
     if expression.func == sympy.Add:
         summands = expression.args
@@ -277,21 +284,14 @@ def discretize(hamiltonian, discrete_coordinates):
     Recursive derivation implemented in _discretize_summand is applied
     on every summand. Shortening is applied before return on output.
     """
-    coordinates_names = sorted(list(discrete_coordinates))
-    coordinates = [sympy.Symbol(c, commutative=False) for c in coordinates_names]
-    wf = sympy.Function(wavefunction_name)(*coordinates)
-
-    if wf in hamiltonian.atoms(sympy.Function):
-        raise ValueError("Hamiltonian must not contain {}.".format(wf))
-
     if not isinstance(hamiltonian, sympy.Matrix):
-        return _discretize_expression(hamiltonian * wf, discrete_coordinates)
+        return _discretize_expression(hamiltonian, discrete_coordinates)
 
     shape = hamiltonian.shape
 
     discrete_hamiltonian = defaultdict(lambda: sympy.zeros(*shape))
     for i,j in itertools.product(range(shape[0]), repeat=2):
-        expression = hamiltonian[i, j] * wf
+        expression = hamiltonian[i, j]
         hoppings = _discretize_expression(expression, discrete_coordinates)
 
         for offset, hop in hoppings.items():

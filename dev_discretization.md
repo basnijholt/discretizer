@@ -15,14 +15,14 @@
 >>> import discretizer
 >>> from discretizer.algorithms import _discretize_expression as discretize_expression
 >>> from discretizer import momentum_operators
->>> from discretizer import coord
+>>> from discretizer import coordinates
 ```
 
 ## Defining input expression
 
 ```python
 >>> kx, ky, kz = momentum_operators
->>> x, y, z = coord
+>>> x, y, z = coordinates
 ...
 >>> A, B = sympy.symbols('A B', commutative=False)
 >>> A = A(x,y,z)
@@ -37,20 +37,24 @@ short hoppings
 4. gather results from summands (after the loop from 2).
 
 ```python
->>> from discretizer.algorithms import wf
-...
 >>> from discretizer.algorithms import extract_hoppings
 >>> from discretizer.algorithms import shortening
 ```
 
 ```python
->>> expr = kx**2 + kx + kx*sympy.sin(x); expr
+>>> wf = sympy.Symbol('Psi')(*coordinates)
+```
+
+```python
+>>> expr = kx**2 + kx + kx*sympy.sin(x)
+>>> expr = expr
+>>> expr
                    2
 kₓ + kₓ⋅sin(x) + kₓ
 ```
 
 ```python
->>> output = discretize_expression(expr)
+>>> output = discretize_expression(expr, {'x', 'y', 'z'})
 >>> output
 ⎧             ⅈ    ⅈ⋅sin(a - x)   1              2                 ⅈ    ⅈ⋅sin(
 ⎪(-1, 0, 0): ─── - ──────────── - ──, (0, 0, 0): ──, (1, 0, 0): - ─── - ──────
@@ -73,7 +77,7 @@ a         2⎬
 ```
 
 ```python
->>> discretize_expression(expr)
+>>> discretize_expression(expr, {'x', 'y', 'z'})
 ⎧              ⎛  a          ⎞                                      ⎛  a      
 ⎪            -A⎜- ─ + x, y, z⎟                                     A⎜- ─ + x, 
 ⎪              ⎝  2          ⎠                                      ⎝  2      
@@ -99,7 +103,7 @@ kₓ⋅k_y
 ```
 
 ```python
->>> discretize_expression(expr)
+>>> discretize_expression(expr, {'x', 'y', 'z'})
 ⎧             -1                 1                 1               -1  ⎫
 ⎪(-1, -1, 0): ────, (-1, 1, 0): ────, (1, -1, 0): ────, (1, 1, 0): ────⎪
 ⎨                2                 2                 2                2⎬
@@ -116,7 +120,7 @@ kₓ + kₓ
 ```
 
 ```python
->>> discretize_expression(expr)
+>>> discretize_expression(expr, {'x', 'y', 'z'})
 ⎧             ⅈ    1              2                 ⅈ    1 ⎫
 ⎪(-1, 0, 0): ─── - ──, (0, 0, 0): ──, (1, 0, 0): - ─── - ──⎪
 ⎨            2⋅a    2              2               2⋅a    2⎬
@@ -132,7 +136,7 @@ kₓ + kₓ
 ```
 
 ```python
->>> discretize_expression(expr)
+>>> discretize_expression(expr, {'x', 'y', 'z'})
 {(0, 0, 0): 5 + B}
 ```
 
@@ -144,7 +148,7 @@ kₓ
 ```
 
 ```python
->>> discretize_expression(expr)
+>>> discretize_expression(expr, {'x', 'y', 'z'})
 ⎧             ⅈ              -ⅈ ⎫
 ⎨(-1, 0, 0): ───, (1, 0, 0): ───⎬
 ⎩            2⋅a             2⋅a⎭
@@ -153,7 +157,8 @@ kₓ
 ### Test6
 
 ```python
->>> expr = kx*ky*discretizer.algorithms.wf; expr
+>>> wf = sympy.Symbol(discretizer.algorithms.wavefunction_name)(*coordinates)
+>>> expr = kx*ky*wf; expr
 kₓ⋅k_y⋅Ψ(x, y, z)
 ```
 

@@ -46,7 +46,7 @@ state:
 ```python
 >>> from discretizer.algorithms import wavefunction_name
 >>> from discretizer.algorithms import _discretize_summand
->>> from discretizer.algorithms import coordinates
+>>> from discretizer import coordinates
 ```
 
 ```python
@@ -54,7 +54,8 @@ state:
 ```
 
 ```python
->>> def inputs_for_sebastians_functions(hamiltonian, coordinates):
+>>> def inputs_for_sebastians_functions(hamiltonian, discrete_coordinates):
+...     coordinates = [sympy.Symbol(s, commutative=False) for s in discrete_coordinates]
 ...     wf = sympy.Function(wavefunction_name)(*coordinates)
 ...     expression = sympy.expand(hamiltonian * wf)
 ...
@@ -65,7 +66,7 @@ state:
 ...
 ...     outputs = []
 ...     for summand in summands:
-...         outputs.append(_discretize_summand(summand))
+...         outputs.append(_discretize_summand(summand, discrete_coordinates))
 ...     return outputs
 ```
 
@@ -103,7 +104,8 @@ state:
 ```
 
 ```python
->>> test = inputs_for_sebastians_functions(kx, coordinates=(x,));test
+>>> discrete_coordinates = {'x'}
+>>> test = inputs_for_sebastians_functions(kx, discrete_coordinates);test
 ⎡   ⎛  Ψ(-aₓ + x)   Ψ(aₓ + x)⎞⎤
 ⎢-ⅈ⋅⎜- ────────── + ─────────⎟⎥
 ⎣   ⎝     2⋅aₓ         2⋅aₓ  ⎠⎦
@@ -118,7 +120,7 @@ state:
 ```
 
 ```python
->>> [shortening(summand) for summand in hop]
+>>> [shortening(summand, discrete_coordinates) for summand in hop]
 ⎡⎧        ⅈ         -ⅈ ⎫⎤
 ⎢⎨(-1,): ───, (1,): ───⎬⎥
 ⎣⎩       2⋅a        2⋅a⎭⎦
@@ -127,11 +129,9 @@ state:
 ### Test2
 
 ```python
->>> # A = sympy.Function('A')(x, y,z)
-... # test = inputs_for_sebastians_functions(kz*A*kz, coordinates=[x, y, z]);test
-...
-... A = sympy.Function('A')(y,z)
->>> test = inputs_for_sebastians_functions(kz*A*kz, coordinates=[y, z]);test
+>>> A = sympy.Function('A')(y,z)
+>>> discrete_coordinates = {'y', 'z'}
+>>> test = inputs_for_sebastians_functions(kz*A*kz, discrete_coordinates);test
 ⎡A(y, -a_z + z)⋅Ψ(y, z)   A(y, -a_z + z)⋅Ψ(y, -2⋅a_z + z)   A(y, a_z + z)⋅Ψ(y,
 ⎢────────────────────── - ─────────────────────────────── + ──────────────────
 ⎢             2                             2                            2    
@@ -160,7 +160,7 @@ A(y, a_z + z) ⎫⎤
 ```
 
 ```python
->>> [shortening(summand, discrete_coordinates=['y', 'z']) for summand in hop]
+>>> [shortening(summand, discrete_coordinates) for summand in hop]
 ⎡⎧           ⎛     a    ⎞            ⎛     a    ⎞    ⎛   a    ⎞            ⎛  
 ⎢⎪         -A⎜y, - ─ + z⎟           A⎜y, - ─ + z⎟   A⎜y, ─ + z⎟          -A⎜y,
 ⎢⎪           ⎝     2    ⎠            ⎝     2    ⎠    ⎝   2    ⎠            ⎝  
@@ -182,13 +182,14 @@ A(y, a_z + z) ⎫⎤
 
 ```python
 >>> A = sympy.Function('A')(x, y,z)
->>> test = inputs_for_sebastians_functions(kz*A*kz, coordinates=[x, y, z]);test
-⎡A(x, y, -a_z + z)⋅Ψ(x, y, z)   A(x, y, -a_z + z)⋅Ψ(x, y, -2⋅a_z + z)   A(x, y
+>>> discrete_coordinates = {'x', 'y', 'z'}
+>>> test = inputs_for_sebastians_functions(kz*A*kz, discrete_coordinates);test
+⎡A(x, y, -a_z + z)⋅Ψ(y, x, z)   A(x, y, -a_z + z)⋅Ψ(y, x, -2⋅a_z + z)   A(x, y
 ⎢──────────────────────────── - ───────────────────────────────────── + ──────
 ⎢                2                                   2                        
 ⎣           4⋅a_z                               4⋅a_z                         
 
-, a_z + z)⋅Ψ(x, y, z)   A(x, y, a_z + z)⋅Ψ(x, y, 2⋅a_z + z)⎤
+, a_z + z)⋅Ψ(y, x, z)   A(x, y, a_z + z)⋅Ψ(y, x, 2⋅a_z + z)⎤
 ───────────────────── - ───────────────────────────────────⎥
           2                                 2              ⎥
      4⋅a_z                             4⋅a_z               ⎦
@@ -211,7 +212,7 @@ A(y, a_z + z) ⎫⎤
 ```
 
 ```python
->>> [shortening(summand) for summand in hop]
+>>> [shortening(summand, discrete_coordinates) for summand in hop]
 ⎡⎧              ⎛        a    ⎞               ⎛        a    ⎞    ⎛      a    ⎞
 ⎢⎪            -A⎜x, y, - ─ + z⎟              A⎜x, y, - ─ + z⎟   A⎜x, y, ─ + z⎟
 ⎢⎪              ⎝        2    ⎠               ⎝        2    ⎠    ⎝      2    ⎠
@@ -233,7 +234,8 @@ A(y, a_z + z) ⎫⎤
 
 ```python
 >>> A = sympy.Function('A')(x, y)
->>> test = inputs_for_sebastians_functions(kx + A + 5, coordinates=[x, y]);test
+>>> discrete_coordinates = {'x', 'y'}
+>>> test = inputs_for_sebastians_functions(kx + A + 5, discrete_coordinates);test
 ⎡              ⎛  Ψ(-aₓ + x, y)   Ψ(aₓ + x, y)⎞                 ⎤
 ⎢5⋅Ψ(x, y), -ⅈ⋅⎜- ───────────── + ────────────⎟, A(x, y)⋅Ψ(x, y)⎥
 ⎣              ⎝       2⋅aₓ           2⋅aₓ    ⎠                 ⎦
@@ -245,4 +247,11 @@ A(y, a_z + z) ⎫⎤
 ⎡             ⎧          ⅈ            -ⅈ  ⎫                   ⎤
 ⎢{(0, 0): 5}, ⎨(-1, 0): ────, (1, 0): ────⎬, {(0, 0): A(x, y)}⎥
 ⎣             ⎩         2⋅aₓ          2⋅aₓ⎭                   ⎦
+```
+
+```python
+>>> [shortening(summand, discrete_coordinates) for summand in hop]
+⎡             ⎧          ⅈ           -ⅈ ⎫                   ⎤
+⎢{(0, 0): 5}, ⎨(-1, 0): ───, (1, 0): ───⎬, {(0, 0): A(x, y)}⎥
+⎣             ⎩         2⋅a          2⋅a⎭                   ⎦
 ```

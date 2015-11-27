@@ -55,33 +55,45 @@ This will be notebook showing how our stuff works
 ```
 
 ```python
->>> magic(H, space_dependent=[A, B, C], discrete_coordinates={'x'}, verbose=True,
+>>> magic(H, space_dependent=[B, C], discrete_coordinates={'x', 'y'}, verbose=True,
 ...             symbolic_output=True)
-Discrete coordinates set to:  ['x']
+Discrete coordinates set to:  ['x', 'y']
 defaultdict(<function discretizer.algorithms.discretize.<locals>.<lambda>>,
-            ⎧       ⎡  ⎛  a    ⎞         ⎤        ⎡ ⎛  a    ⎞    ⎛a    ⎞                  
-⎪       ⎢-A⎜- ─ + x⎟         ⎥        ⎢A⎜- ─ + x⎟   A⎜─ + x⎟                  
-⎪       ⎢  ⎝  2    ⎠   ⅈ⋅B(x)⎥        ⎢ ⎝  2    ⎠    ⎝2    ⎠                  
-⎪(-1,): ⎢────────────  ──────⎥, (0,): ⎢────────── + ────────          0       
-⎪       ⎢      2        2⋅a  ⎥        ⎢     2           2                     
-⎨       ⎢     a              ⎥        ⎢    a           a                      
-⎪       ⎢                    ⎥        ⎢                                       
-⎪       ⎢ⅈ⋅B(-a + x)         ⎥        ⎢                          2            
-⎪       ⎢───────────     0   ⎥        ⎣          0            k_y ⋅C(x) + sin(
-⎪       ⎣    2⋅a             ⎦                                                
+            ⎧         ⎡     -A         ⅈ⋅B(x, y)⎤                                         
+⎪(-1, 0): ⎢     ───        ─────────⎥, (0, -1): ⎡0         0       ⎤, (0, 0): 
+⎪         ⎢       2           2⋅a   ⎥           ⎢                  ⎥          
+⎪         ⎢      a                  ⎥           ⎢     ⎛     a    ⎞ ⎥          
+⎪         ⎢                         ⎥           ⎢   -C⎜x, - ─ + y⎟ ⎥          
+⎨         ⎢ⅈ⋅B(-a + x, y)           ⎥           ⎢     ⎝     2    ⎠ ⎥          
+⎪         ⎢──────────────      0    ⎥           ⎢0  ───────────────⎥          
+⎪         ⎣     2⋅a                 ⎦           ⎢           2      ⎥          
+⎪                                               ⎣          a       ⎦          
+⎪                                                                             
 ⎩                                                                             
 
-  ⎤        ⎡   ⎛a    ⎞            ⎤⎫
-  ⎥        ⎢ -A⎜─ + x⎟            ⎥⎪
-  ⎥        ⎢   ⎝2    ⎠    -ⅈ⋅B(x) ⎥⎪
-  ⎥, (1,): ⎢ ──────────   ────────⎥⎪
-  ⎥        ⎢      2         2⋅a   ⎥⎪
-  ⎥        ⎢     a                ⎥⎬
-  ⎥        ⎢                      ⎥⎪
-  ⎥        ⎢-ⅈ⋅B(a + x)           ⎥⎪
-x)⎦        ⎢────────────     0    ⎥⎪
-           ⎣    2⋅a               ⎦⎪
-                                   ⎭)
+⎡2⋅A                                      ⎤                                   
+⎢───                   0                  ⎥, (0, 1): ⎡0        0      ⎤, (1, 0
+⎢  2                                      ⎥          ⎢                ⎥       
+⎢ a                                       ⎥          ⎢     ⎛   a    ⎞ ⎥       
+⎢                                         ⎥          ⎢   -C⎜x, ─ + y⎟ ⎥       
+⎢               ⎛     a    ⎞    ⎛   a    ⎞⎥          ⎢     ⎝   2    ⎠ ⎥       
+⎢              C⎜x, - ─ + y⎟   C⎜x, ─ + y⎟⎥          ⎢0  ─────────────⎥       
+⎢               ⎝     2    ⎠    ⎝   2    ⎠⎥          ⎢          2     ⎥       
+⎢ 0   sin(x) + ───────────── + ───────────⎥          ⎣         a      ⎦       
+⎢                     2              2    ⎥                                   
+⎣                    a              a     ⎦                                   
+
+   ⎡      -A         -ⅈ⋅B(x, y) ⎤⎫
+): ⎢      ───        ───────────⎥⎪
+   ⎢        2            2⋅a    ⎥⎪
+   ⎢       a                    ⎥⎪
+   ⎢                            ⎥⎪
+   ⎢-ⅈ⋅B(a + x, y)              ⎥⎬
+   ⎢───────────────       0     ⎥⎪
+   ⎣      2⋅a                   ⎦⎪
+                                 ⎪
+                                 ⎪
+                                 ⎭)
 ```
 
 ```python
@@ -91,20 +103,24 @@ Function generated for (0,):
 def _anonymous_func(site, p):
     x = site.pos
     k_y, a = p.k_y, p.a
-    C, A = p.C, p.A
+    A, C = p.A, p.C
     return (np.array([[A(-a/2 + x)/a**2 + A(a/2 + x)/a**2, 0], [0, k_y**2*C(x) + sin(x)]]))
 
 Function generated for (-1,):
 def _anonymous_func(site1, site2, p):
     x = site2.pos
     a = p.a
-    B, A = p.B, p.A
+    A, B = p.A, p.B
     return (np.array([[-A(-a/2 + x)/a**2, I*B(x)/(2*a)], [I*B(-a + x)/(2*a), 0]]))
 
 Function generated for (1,):
 def _anonymous_func(site1, site2, p):
     x = site2.pos
     a = p.a
-    B, A = p.B, p.A
+    A, B = p.A, p.B
     return (np.array([[-A(a/2 + x)/a**2, -I*B(x)/(2*a)], [-I*B(a + x)/(2*a), 0]]))
+```
+
+```python
+
 ```
