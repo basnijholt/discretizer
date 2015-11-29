@@ -57,21 +57,6 @@ state:
 ```
 
 ```python
->>> def search_Function_in_summand(expr, path):
-...     if expr.func = sympy.Mul:
-...         for i in np.range(len(expr.args)):
-...             if isinstance(expr.args[i], sympy.Function):
-...                 path.append(i)
-...                 return path
-...             else:
-...                 return 'None'
-...     elif isinstance(expr.args[i], sympy.Function):
-...         return path
-...     else:
-...         return 'None'
-```
-
-```python
 >>> def follow_path(expr, path):
 ...     res = expr
 ...     for i in np.arange(len(path)):
@@ -83,16 +68,17 @@ state:
 ...     for i in np.arange(len(path)):
 ...         temp = follow_path(expr, path[:-(i+1)])
 ...         args = list(temp.args)
-...         args[path[i]] = res
+...         args[path[len(path)-i-1]] = res
 ...         res = temp.func(*tuple(args))
 ...     return res
 ...
 >>> def interpolate_Function(expr):
 ...     path = 'None'
 ...     factor = 'None'
-...     interupt = False
+...     change = False
 ...     summand_0 = 'None'
 ...     summand_1 = 'None'
+...     res = expr
 ...     for i in np.arange(len(expr.args)):
 ...         argument = sympy.expand(expr.args[i])
 ...         if argument.func == sympy.Add:
@@ -110,7 +96,7 @@ state:
 ...                             factor = (temp)
 ...                             path = np.array([i, j, k])
 ...     if not factor == 'None':
-...         interupt = True
+...         change = True
 ...
 ...         sign = np.sign(factor)
 ...         offsets = np.array([int(factor), sign * (int(sign * factor) + 1)])
@@ -120,70 +106,90 @@ state:
 ...         res = (  weights[0] * interchange(expr, offsets[0] * sympy.Symbol('a'), path[:-1])
 ...                + weights[1] * interchange(expr, offsets[1] * sympy.Symbol('a'), path[:-1]))
 ...
-...     return sympy.expand(res), interupt
+...     return sympy.expand(res), change
+...
+>>> def interpolate(expr):
+...     change = False
+...     expr = sympy.expand(expr)
+...     res = expr
+...
+...     if isinstance(expr, sympy.Function):# and not change:
+...         path = np.array([])
+...         temp, change = interpolate_Function(follow_path(expr, path))
+...         res = interchange(expr, temp, path)
+...
+...     for i in np.arange(len(expr.args)):
+...         path = np.array([i])
+...         if isinstance(follow_path(expr, path), sympy.Function) and not change:
+...             temp, change = interpolate_Function(follow_path(expr, path))
+...             res = interchange(expr, temp, path)
+...
+...         for j in np.arange(len(expr.args[i].args)):
+...             path = np.array([i, j])
+...             if isinstance(follow_path(expr, path), sympy.Function) and not change:
+...                 temp, change = interpolate_Function(follow_path(expr, path))
+...                 res = interchange(expr, temp, path)
+...
+...     if change:
+...         res = interpolate(res)
+...
+...     return sympy.expand(res)
 ```
 
 ```python
->>> a = sympy.Symbol('a')
+>>> a, x, y, z = sympy.symbols('a x y z')
+>>> A = sympy.Function('A')(x, y, z)
+>>> B = sympy.Function('B')(x, y, z)
 >>> test = A.subs(y, y-2*a/5)#.subs(x, x+a/2)
 >>> test
- ⎛     2⋅a    ⎞
-A⎜x, - ─── + y⎟
- ⎝      5     ⎠
+ ⎛     2⋅a       ⎞
+A⎜x, - ─── + y, z⎟
+ ⎝      5        ⎠
 ```
 
 ```python
 >>> interpolate_Function(test)
-(3*A(x, y)/5 + 2*A(x, -a + y)/5, True)
-```
-
-```python
->>> def interpolate(expr):
-...
-...     for depth in np.arange(3):
-...
-...             if isinstance(expr.args[i], sympy.Function):
-...                 path = np.array([i])
-...                 temp, change = interpolate_Function(follow_path(expr, path))
+(3*A(x, y, z)/5 + 2*A(x, -a + y, z)/5, True)
 ```
 
 ```python
 >>> test_2 = A*test
 >>> test_2
-         ⎛     2⋅a    ⎞
-A(x, y)⋅A⎜x, - ─── + y⎟
-         ⎝      5     ⎠
-```
-
-```python
->>> interpolate(test_2)
-False
-True
-```
-
-```python
->>> def search()
-```
-
-```python
->>> np.linspace(1,17,17)[:-17]
-array([], dtype=float64)
+            ⎛     2⋅a       ⎞
+A(x, y, z)⋅A⎜x, - ─── + y, z⎟
+            ⎝      5        ⎠
 ```
 
 ```python
 >>> print(test)
 >>> print(follow_path(test, np.array([1, 1])))
 >>> interchange(test, a, np.array([1,1]))
-A(x, -2*a/5 + y)
+A(x, -2*a/5 + y, z)
 -2*a/5
-A(x, a + y)
+A(x, a + y, z)
 ```
 
 ```python
->>> follow_path(test, np.array([1,1]))
--2⋅a 
-─────
-  5
+>>> interpolate(test)
+3⋅A(x, y, z)   2⋅A(x, -a + y, z)
+──────────── + ─────────────────
+     5                 5
+```
+
+```python
+>>> test_2 = B.subs(z, z+a/2)*(A.subs(x,x+a/2) + A.subs(y, y-a/2))
+>>> interpolate(test_2)
+A(x, y, z)⋅B(x, y, z)   A(x, y, z)⋅B(x, y, a + z)   A(x, -a + y, z)⋅B(x, y, z)
+───────────────────── + ───────────────────────── + ──────────────────────────
+          2                         2                           4             
+
+   A(x, -a + y, z)⋅B(x, y, a + z)   A(a + x, y, z)⋅B(x, y, z)   A(a + x, y, z)
+ + ────────────────────────────── + ───────────────────────── + ──────────────
+                 4                              4                             
+
+⋅B(x, y, a + z)
+───────────────
+4
 ```
 
 ```python
