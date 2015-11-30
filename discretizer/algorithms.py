@@ -279,10 +279,10 @@ def _discretize_expression(expression, discrete_coordinates):
 
     outputs = []
     for summand in summands:
-        outputs.append(_discretize_summand(summand, discrete_coordinates))
-
-    outputs = [extract_hoppings(summand) for summand in outputs]
-    outputs = [shortening(summand, discrete_coordinates) for summand in outputs]
+        out = _discretize_summand(summand, discrete_coordinates)
+        out = extract_hoppings(out)
+        out = shortening(out, discrete_coordinates)
+        outputs.append(out)
 
     discrete_expression = defaultdict(int)
     for summand in outputs:
