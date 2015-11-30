@@ -120,7 +120,9 @@ def test_read_hoppings_from_wf_2():
         wf(x, y): (0, 0),
         wf(x, z): (0, 0),
         wf(x+ax, y-2*ay): (1, -2),
-        wf(x, z+3*az): (0, 3)
+        wf(x, z+3*az): (0, 3),
+        wf(y, z): (0, 0),
+        wf(y, z+az): (0, 1),
     }
 
     for inp, out in test.items():
@@ -128,9 +130,40 @@ def test_read_hoppings_from_wf_2():
         assert got == out,\
             "Should be: read_hopping_from_wf({}) == {}. Not {}".format(inp, out, got)
 
+
+@raises(ValueError)
+def test_read_hoppings_from_wf_ValueError_1():
+    read_hopping_from_wf(wf(x+ay, ay))
+
+@raises(ValueError)
+def test_read_hoppings_from_wf_ValueError_2():
+    read_hopping_from_wf(wf(y, x))
+
+@raises(ValueError)
+def test_read_hoppings_from_wf_ValueError_3():
+    read_hopping_from_wf(wf(x, x))
+
+@raises(ValueError)
+def test_read_hoppings_from_wf_ValueError_4():
+    read_hopping_from_wf(wf(x, ax))
+
+@raises(ValueError)
+def test_read_hoppings_from_wf_ValueError_5():
+    read_hopping_from_wf(wf(y, A))
+
+
 @raises(AssertionError)
-def test_read_hoppings_from_wf_3():
-    read_hopping_from_wf(A)
-    read_hopping_from_wf(5*Psi)
-    read_hopping_from_wf(Psi+2)
+def test_read_hoppings_from_wf_AssertionError_1():
     read_hopping_from_wf(Psi + A)
+
+@raises(AssertionError)
+def test_read_hoppings_from_wf_AssertionError_2():
+    read_hopping_from_wf(A)
+
+@raises(AssertionError)
+def test_read_hoppings_from_wf_AssertionError_3():
+    read_hopping_from_wf(5*Psi)
+
+@raises(AssertionError)
+def test_read_hoppings_from_wf_AssertionError_4():
+    read_hopping_from_wf(Psi+2)

@@ -518,6 +518,38 @@ def read_hopping_from_wf(inp_psi):
     """
     assert inp_psi.func.__name__ == wavefunction_name, \
         'Input should be function that represents wavefunction in module.'
+
+    # below is to check if input is consistent and in lexical order
+    # this are more checks for internal usage
+    coordinates_names = ['x', 'y', 'z']
+    lattice_const_names = ['a_x', 'a_y', 'a_z']
+    arg_coords = []
+    for arg in inp_psi.args:
+        names = [s.name for s in arg.atoms(sympy.Symbol)]
+        ind = -1
+        for s in names:
+            if not any(s in coordinates_names for s in names):
+                raise ValueError("Wave function argument '{}' is incorrect.".format(s))
+            if s not in coordinates_names and s not in lattice_const_names:
+                raise ValueError("Wave function argument '{}' is incorrect.".format(s))
+            if s in lattice_const_names:
+                s = s.split('_')[1]
+            tmp = coordinates_names.index(s)
+            if tmp in arg_coords:
+                msg = "Wave function '{}' arguments are inconsistent."
+                raise ValueError(msg.format(inp_psi))
+            if ind != -1:
+                if tmp != ind:
+                    msg = "Wave function '{}' arguments are inconsistent."
+                    raise ValueError(msg.format(inp_psi))
+            else:
+                ind = tmp
+        arg_coords.append(ind)
+    if arg_coords != sorted(arg_coords):
+        msg = "Coordinates of wave function '{}' are not in lexical order."
+        raise ValueError(msg.format(inp_psi))
+
+    # function real body
     offset = []
     for argument in inp_psi.args:
         temp = sympy.expand(argument)
