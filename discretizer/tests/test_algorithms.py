@@ -120,7 +120,7 @@ def test_read_hoppings_from_wf_2():
         wf(x, y): (0, 0),
         wf(x, z): (0, 0),
         wf(x+ax, y-2*ay): (1, -2),
-        wf(x, az+3*az): (0, 3)
+        wf(x, z+3*az): (0, 3)
     }
 
     for inp, out in test.items():
@@ -129,7 +129,7 @@ def test_read_hoppings_from_wf_2():
             "Should be: read_hopping_from_wf({}) == {}. Not {}".format(inp, out, got)
 
 @raises(AssertionError)
-def test_read_hoppings_from_wf_2():
+def test_read_hoppings_from_wf_3():
     read_hopping_from_wf(A)
     read_hopping_from_wf(5*Psi)
     read_hopping_from_wf(Psi+2)
