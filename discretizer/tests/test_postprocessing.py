@@ -79,15 +79,38 @@ def test_test_read_hoppings_from_wf_TypeError():
 
 def test_extract_hoppings():
     discrete_coordinates = {'x', 'y', 'z'}
-    test_inp = '-I*(-Psi(-a_x + x, y)/(2*a_x) + Psi(a_x + x, y)/(2*a_x))'
-    test_out = {
-        (1, 0): '-I/(2*a)',
-        (-1, 0): 'I/(2*a)',
-    }
+    tests = [
+        {
+            'test_inp': '-I*(-Psi(-a_x + x, y)/(2*a_x) + Psi(a_x + x, y)/(2*a_x))',
+            'test_out': {
+                (1, 0): '-I/(2*a)',
+                (-1, 0): 'I/(2*a)',
+            },
+        },
+        {
+            'test_inp': 'Psi(x, y)/(2*a_x**2) - Psi(-2*a_x + x, y)/(4*a_x**2) - Psi(2*a_x + x, y)/(4*a_x**2)',
+            'test_out': {
+                (1, 0): '-1/a**2',
+                (0, 0): '2/a**2',
+                (-1, 0): '-1/a**2',
+            },
+        },
+        {
+            'test_inp': 'A(-a_x + x)*Psi(x, y)/(4*a_x**2) - A(-a_x + x)*Psi(-2*a_x + x, y)/(4*a_x**2) + A(a_x + x)*Psi(x, y)/(4*a_x**2) - A(a_x + x)*Psi(2*a_x + x, y)/(4*a_x**2)',
+            'test_out': {
+                (1, 0): '-A(a/2 + x)/a**2',
+                (0, 0): 'A(-a/2 + x)/a**2 + A(a/2 + x)/a**2',
+                (-1, 0): '-A(-a/2 + x)/a**2',
+            },
+        },
+    ]
 
-    inp = sympy.sympify(test_inp, locals=ns)
-    result = extract_hoppings(inp, discrete_coordinates)
-    for key, got in result.items():
-        out = sympy.sympify(test_out[key], locals=ns)
-        assert sympy.simplify(sympy.expand(got - out)) == 0, \
-            "Should be: extract_hoppings({})=={}. Not {}".format(inp, test_out, result)
+    for test in tests:
+        test_inp = test['test_inp']
+        test_out = test['test_out']
+        inp = sympy.sympify(test_inp, locals=ns)
+        result = extract_hoppings(inp, discrete_coordinates)
+        for key, got in result.items():
+            out = sympy.sympify(test_out[key], locals=ns)
+            assert sympy.simplify(sympy.expand(got - out)) == 0, \
+                "Should be: extract_hoppings({})=={}. Not {}".format(inp, test_out, result)

@@ -34,7 +34,6 @@ state:
 ```python
 >>> from discretizer.algorithms import read_hopping_from_wf
 >>> from discretizer.algorithms import extract_hoppings
->>> from discretizer.algorithms import shortening
 ```
 
 ```python
@@ -47,58 +46,59 @@ state:
 ...     return Psi
 ```
 
-```python
->>> def test_process_on_summand(summand, discrete_coordinates):
-...     out1 = _discretize_summand(summand, discrete_coordinates)
-...     out2 = extract_hoppings(out1)
-...     out3 = shortening(out2, discrete_coordinates)
-...
-...     return out1, out2, out3
-```
-
 # Support stuff
 
 ```python
 >>> kx, ky, kz = sympy.symbols('k_x k_y k_z', commutative=False)
 >>> x, y, z = sympy.symbols('x y z', commutative=False)
-...
 >>> A, B = sympy.symbols('A B', commutative=False)
 ```
 
 ```python
 >>> discrete_coordinates = {'x', 'y'}
-...
 >>> Psi = get_wf(discrete_coordinates)
->>> summand = kx * Psi
+>>> summand = kx*A(x)*kx * Psi
 ```
 
 ```python
+>>> inp = _discretize_summand(summand, discrete_coordinates)
 >>> summand
-kₓ⋅Ψ(x, y)
+kₓ⋅A(x)⋅kₓ⋅Ψ(x, y)
 ```
 
 ```python
->>> out1, out2, out3 = test_process_on_summand(summand, discrete_coordinates)
+>>> inp
+A(-aₓ + x)⋅Ψ(x, y)   A(-aₓ + x)⋅Ψ(-2⋅aₓ + x, y)   A(aₓ + x)⋅Ψ(x, y)   A(aₓ + x
+────────────────── - ────────────────────────── + ───────────────── - ────────
+          2                        2                        2                 
+      4⋅aₓ                     4⋅aₓ                     4⋅aₓ                  
+
+)⋅Ψ(2⋅aₓ + x, y)
+────────────────
+     2          
+ 4⋅aₓ
 ```
 
 ```python
->>> out1
-   ⎛  Ψ(-aₓ + x, y)   Ψ(aₓ + x, y)⎞
--ⅈ⋅⎜- ───────────── + ────────────⎟
-   ⎝       2⋅aₓ           2⋅aₓ    ⎠
+>>> print(inp)
+A(-a_x + x)*Psi(x, y)/(4*a_x**2) - A(-a_x + x)*Psi(-2*a_x + x, y)/(4*a_x**2) + A(a_x + x)*Psi(x, y)/(4*a_x**2) - A(a_x + x)*Psi(2*a_x + x, y)/(4*a_x**2)
 ```
 
 ```python
->>> out2
-defaultdict(int,
-            ⎧          ⅈ            -ⅈ  ⎫
-⎨(-1, 0): ────, (1, 0): ────⎬
-⎩         2⋅aₓ          2⋅aₓ⎭)
+>>> hoppings = extract_hoppings(inp, discrete_coordinates); hoppings
+⎧           ⎛  a    ⎞            ⎛  a    ⎞    ⎛a    ⎞            ⎛a    ⎞ ⎫
+⎪         -A⎜- ─ + x⎟           A⎜- ─ + x⎟   A⎜─ + x⎟          -A⎜─ + x⎟ ⎪
+⎪           ⎝  2    ⎠            ⎝  2    ⎠    ⎝2    ⎠            ⎝2    ⎠ ⎪
+⎨(-1, 0): ────────────, (0, 0): ────────── + ────────, (1, 0): ──────────⎬
+⎪               2                    2           2                  2    ⎪
+⎪              a                    a           a                  a     ⎪
+⎩                                                                        ⎭
 ```
 
 ```python
->>> out3
-⎧          ⅈ           -ⅈ ⎫
-⎨(-1, 0): ───, (1, 0): ───⎬
-⎩         2⋅a          2⋅a⎭
+>>> for key, val in hoppings.items():
+...     print("{}: '{}',".format(key, val))
+(1, 0): '-A(a/2 + x)/a**2',
+(0, 0): 'A(-a/2 + x)/a**2 + A(a/2 + x)/a**2',
+(-1, 0): '-A(-a/2 + x)/a**2',
 ```
