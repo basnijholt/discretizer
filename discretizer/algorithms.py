@@ -280,8 +280,7 @@ def _discretize_expression(expression, discrete_coordinates):
     outputs = []
     for summand in summands:
         out = _discretize_summand(summand, discrete_coordinates)
-        out = extract_hoppings(out)
-        out = shortening(out, discrete_coordinates)
+        out = extract_hoppings(out, discrete_coordinates)
         outputs.append(out)
 
     discrete_expression = defaultdict(int)
@@ -574,8 +573,9 @@ def read_hopping_from_wf(wf):
     return tuple(offset)
 
 
-# This function will not have the shortening included
-def extract_hoppings(expr):
+def extract_hoppings(expr, discrete_coordinates):
+    """Extract hopping and perform shortening operation. """
+    # START: hopping extraction
     # this line should be unneccessary in the long run. Now I want to avoid errors due to wrong formats of the input.
     expr = sympy.expand(expr)
 
@@ -607,11 +607,8 @@ def extract_hoppings(expr):
             hoppings[read_hopping_from_wf(expr.args[-1])] += sympy.Mul(*expr.args[:-1])
         else:
             hoppings[read_hopping_from_wf(expr)] += 1
-    return hoppings
 
-
-def shortening(hoppings, discrete_coordinates):
-    """ Perform shortening of hoppings."""
+    # START: shortenig
     discrete_coordinates = sorted(list(discrete_coordinates))
     tmps = ['a_{}'.format(s) for s in discrete_coordinates]
     lattice_constants = sympy.symbols(tmps)
@@ -649,7 +646,6 @@ def shortening(hoppings, discrete_coordinates):
             short_hopping[short_hopping_kind] = short_hopping[short_hopping_kind].subs(subs)
 
     # We don't need separate a_x, a_y and a_z anymore.
-
     for key, val in short_hopping.items():
         short_hopping[key] = val.subs({i: a for i in sympy.symbols('a_x a_y a_z')})
 
