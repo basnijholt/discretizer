@@ -103,6 +103,17 @@ def test_extract_hoppings():
                 (-1, 0): '-A(-a/2 + x)/a**2',
             },
         },
+        {
+            'test_inp': 'I*A(x, y)*Psi(x, -a_y + y, z)/(4*a_x**2*a_y) - I*A(x, y)*Psi(x, a_y + y, z)/(4*a_x**2*a_y) - I*A(-2*a_x + x, y)*Psi(-2*a_x + x, -a_y + y, z)/(8*a_x**2*a_y) + I*A(-2*a_x + x, y)*Psi(-2*a_x + x, a_y + y, z)/(8*a_x**2*a_y) - I*A(2*a_x + x, y)*Psi(2*a_x + x, -a_y + y, z)/(8*a_x**2*a_y) + I*A(2*a_x + x, y)*Psi(2*a_x + x, a_y + y, z)/(8*a_x**2*a_y)',
+            'test_out': {
+                (-1, 1, 0): 'I*A(-a + x, y)/(2*a**3)',
+                (1, 1, 0): 'I*A(a + x, y)/(2*a**3)',
+                (0, -1, 0): 'I*A(x, y)/a**3',
+                (0, 1, 0): '-I*A(x, y)/a**3',
+                (1, -1, 0): '-I*A(a + x, y)/(2*a**3)',
+                (-1, -1, 0): '-I*A(-a + x, y)/(2*a**3)',
+            },
+        },
     ]
 
     for test in tests:
