@@ -492,39 +492,42 @@ def make_kwant_functions(discrete_hamiltonian, discrete_coordinates,
 
 
 # ****** extracting hoppings ***********
-def read_hopping_from_wf(inp_psi):
-    """ Read hopping from an input wave function.
+def read_hopping_from_wf(wf):
+    """Read offset of a wave function in respect to (x,y,z).
 
     Parameters:
-    -----------
-    inpt_psi : ``~discretizer.algorithms.wf`` like object
-        example could be: wf(x + ax, y + 2 * ay, z + 3 * nz)
+    ----------
+    wf : sympy.function.AppliedUndef instance
+        Function representing correct wave function used in discretizer.
+        Should be created using global `wavefunction_name`.
 
     Returns:
     --------
-    offset: tuple
-        offset of a wave function in respect to (x, y, z)
+    offset : tuple
+        tuple of integers or floats that represent offset in respect to (x,y,z).
 
-    Examples:
-    ---------
-    >>> import discretizer
-    >>> wf = discretizer.algorithms.wf
-    >>> ax, ay, az = discretizer.algorithms.lattice_constants
-    >>> x, y, z = discretizer.algorithms.coordinates
-    >>> subs = {x: x+ax, y: y + 2 * ay, z: z + 3 * az}
-    >>> expr = wf.subs(subs)
-    >>> read_hopping_from_wf(expr)
-    (1, 2, 3)
+    Raises:
+    -------
+    ValueError
+        If arguments of wf are repeated / do not stand for valid coordinates or
+        lattice constants / order of dimensions is not lexical.
+    TypeError:
+        If wf is not of type sympy.function.AppliedUndef or its name does not
+        corresponds to global 'wavefunction_name'.
     """
-    assert inp_psi.func.__name__ == wavefunction_name, \
-        'Input should be function that represents wavefunction in module.'
+    if not isinstance(wf, sympy.function.AppliedUndef):
+        raise TypeError('Input should be of type sympy.function.AppliedUndef.')
+
+    if not wf.func.__name__ == wavefunction_name:
+        msg = 'Input should be function that represents wavefunction in module.'
+        raise TypeError(msg)
 
     # below is to check if input is consistent and in lexical order
     # this are more checks for internal usage
     coordinates_names = ['x', 'y', 'z']
     lattice_const_names = ['a_x', 'a_y', 'a_z']
     arg_coords = []
-    for arg in inp_psi.args:
+    for arg in wf.args:
         names = [s.name for s in arg.atoms(sympy.Symbol)]
         ind = -1
         for s in names:
@@ -537,21 +540,21 @@ def read_hopping_from_wf(inp_psi):
             tmp = coordinates_names.index(s)
             if tmp in arg_coords:
                 msg = "Wave function '{}' arguments are inconsistent."
-                raise ValueError(msg.format(inp_psi))
+                raise ValueError(msg.format(wf))
             if ind != -1:
                 if tmp != ind:
                     msg = "Wave function '{}' arguments are inconsistent."
-                    raise ValueError(msg.format(inp_psi))
+                    raise ValueError(msg.format(wf))
             else:
                 ind = tmp
         arg_coords.append(ind)
     if arg_coords != sorted(arg_coords):
         msg = "Coordinates of wave function '{}' are not in lexical order."
-        raise ValueError(msg.format(inp_psi))
+        raise ValueError(msg.format(wf))
 
     # function real body
     offset = []
-    for argument in inp_psi.args:
+    for argument in wf.args:
         temp = sympy.expand(argument)
         if temp in sympy.symbols('x y z', commutative = False):
             offset.append(0)
@@ -559,7 +562,7 @@ def read_hopping_from_wf(inp_psi):
             for arg_summands in temp.args:
                 if arg_summands.func == sympy.Mul:
                     if len(arg_summands.args) > 2:
-                        print('More than two factors in an argument of inp_psi')
+                        print('More than two factors in an argument of wf')
                     if not arg_summands.args[0] in sympy.symbols('a_x a_y a_z'):
                         offset.append(arg_summands.args[0])
                     else:
@@ -567,8 +570,9 @@ def read_hopping_from_wf(inp_psi):
                 elif arg_summands in sympy.symbols('a_x a_y a_z'):
                     offset.append(1)
         else:
-            print('Argument of \inp_psi is neither a sum nor a single space variable.')
+            print('Argument of \wf is neither a sum nor a single space variable.')
     return tuple(offset)
+
 
 # This function will not have the shortening included
 def extract_hoppings(expr):

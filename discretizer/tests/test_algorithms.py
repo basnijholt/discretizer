@@ -7,6 +7,7 @@ from discretizer.algorithms import _discretize_summand
 from discretizer.algorithms import read_hopping_from_wf
 
 from nose.tools import raises
+from nose.tools import assert_raises
 import numpy as np
 
 kx, ky, kz = sympy.symbols('k_x k_y k_z', commutative=False)
@@ -131,39 +132,24 @@ def test_read_hoppings_from_wf_2():
             "Should be: read_hopping_from_wf({}) == {}. Not {}".format(inp, out, got)
 
 
-@raises(ValueError)
-def test_read_hoppings_from_wf_ValueError_1():
-    read_hopping_from_wf(wf(x+ay, ay))
+def test_test_read_hoppings_from_wf_ValueError():
+    tests = {
+        wf(x+ay, ay),
+        wf(y, x),
+        wf(x, x),
+        wf(x, ax),
+        wf(y, A),
+    }
+    for inp in tests:
+        assert_raises(ValueError, read_hopping_from_wf, inp)
 
-@raises(ValueError)
-def test_read_hoppings_from_wf_ValueError_2():
-    read_hopping_from_wf(wf(y, x))
-
-@raises(ValueError)
-def test_read_hoppings_from_wf_ValueError_3():
-    read_hopping_from_wf(wf(x, x))
-
-@raises(ValueError)
-def test_read_hoppings_from_wf_ValueError_4():
-    read_hopping_from_wf(wf(x, ax))
-
-@raises(ValueError)
-def test_read_hoppings_from_wf_ValueError_5():
-    read_hopping_from_wf(wf(y, A))
-
-
-@raises(AssertionError)
-def test_read_hoppings_from_wf_AssertionError_1():
-    read_hopping_from_wf(Psi + A)
-
-@raises(AssertionError)
-def test_read_hoppings_from_wf_AssertionError_2():
-    read_hopping_from_wf(A)
-
-@raises(AssertionError)
-def test_read_hoppings_from_wf_AssertionError_3():
-    read_hopping_from_wf(5*Psi)
-
-@raises(AssertionError)
-def test_read_hoppings_from_wf_AssertionError_4():
-    read_hopping_from_wf(Psi+2)
+def test_test_read_hoppings_from_wf_TypeError():
+    tests = {
+        wf(x,y,z) + A,
+        A(x,y),
+        5*Psi,
+        Psi+2,
+        A,
+    }
+    for inp in tests:
+        assert_raises(TypeError, read_hopping_from_wf, inp)
