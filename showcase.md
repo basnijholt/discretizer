@@ -15,7 +15,7 @@ This will be notebook showing how our stuff works
 
 ```python
 >>> from discretizer.algorithms import substitute_functions
->>> from discretizer.algorithms import make_kwant_functions
+>>> from discretizer.postprocessing import make_kwant_functions
 ```
 
 ## Defining sample expression
@@ -37,6 +37,26 @@ This will be notebook showing how our stuff works
 
 ```python
 >>> from discretizer.algorithms import magic
+```
+
+```python
+>>> # def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
+... #           verbose=False, symbolic_output=False):
+... #     """Just testing."""
+... #     tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
+... #     hamiltonian, discrete_coordinates = tmp
+...
+... #     if verbose:
+... #         print('Discrete coordinates set to: ', sorted(discrete_coordinates))
+... #         print()
+...
+... #     discrete_hamiltonian = discretize(hamiltonian, discrete_coordinates)
+...
+... #     if symbolic_output:
+... #         return discrete_hamiltonian
+...
+... #     tb = make_kwant_functions(discrete_hamiltonian, discrete_coordinates, verbose)
+... #     return tb
 ```
 
 ```python
@@ -88,7 +108,7 @@ Discrete coordinates set to:  ['x']
 Function generated for (0,):
 def _anonymous_func(site, p):
     x = site.pos
-    k_y, a = p.k_y, p.a
+    a, k_y = p.a, p.k_y
     A, C = p.A, p.C
     return (np.array([[A(-a/2 + x)/a**2 + A(a/2 + x)/a**2, 0], [0, k_y**2*C(x) + sin(x)]]))
 
@@ -105,4 +125,8 @@ def _anonymous_func(site1, site2, p):
     a = p.a
     A, B = p.A, p.B
     return (np.array([[-A(a/2 + x)/a**2, -1.j*B(x)/(2*a)], [-1.j*B(a + x)/(2*a), 0]]))
+```
+
+```python
+
 ```
