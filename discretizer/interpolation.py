@@ -1,3 +1,7 @@
+import numpy as np
+import sympy
+
+
 def follow_path(expr, path):
     res = expr
     for i in np.arange(len(path)):
@@ -48,6 +52,7 @@ def interpolate_Function(expr):
                + weights[1] * interchange(expr, offsets[1] * sympy.Symbol('a'), path[:-1]))
 
     return sympy.expand(res), change
+
 
 def interpolate(expr):
     change = False

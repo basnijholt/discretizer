@@ -40,91 +40,91 @@ This will be notebook showing how our stuff works
 ```
 
 ```python
->>> # def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
-... #           verbose=False, symbolic_output=False):
-... #     """Just testing."""
-... #     tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
-... #     hamiltonian, discrete_coordinates = tmp
-...
-... #     if verbose:
-... #         print('Discrete coordinates set to: ', sorted(discrete_coordinates))
-... #         print()
-...
-... #     discrete_hamiltonian = discretize(hamiltonian, discrete_coordinates)
-...
-... #     if symbolic_output:
-... #         return discrete_hamiltonian
-...
-... #     tb = make_kwant_functions(discrete_hamiltonian, discrete_coordinates, verbose)
-... #     return tb
-```
-
-```python
->>> magic(H, space_dependent=[B, C], discrete_coordinates={'x', 'y'}, verbose=True,
+>>> magic(H, space_dependent=[A, B, C], discrete_coordinates={'x', 'y'}, verbose=True,
 ...             symbolic_output=True)
 Discrete coordinates set to:  ['x', 'y']
 defaultdict(<function discretizer.algorithms.discretize.<locals>.<lambda>>,
-            ⎧         ⎡     -A         ⅈ⋅B(x, y)⎤                                         
-⎪(-1, 0): ⎢     ───        ─────────⎥, (0, -1): ⎡0         0       ⎤, (0, 0): 
-⎪         ⎢       2           2⋅a   ⎥           ⎢                  ⎥          
-⎪         ⎢      a                  ⎥           ⎢     ⎛     a    ⎞ ⎥          
-⎪         ⎢                         ⎥           ⎢   -C⎜x, - ─ + y⎟ ⎥          
-⎨         ⎢ⅈ⋅B(-a + x, y)           ⎥           ⎢     ⎝     2    ⎠ ⎥          
-⎪         ⎢──────────────      0    ⎥           ⎢0  ───────────────⎥          
-⎪         ⎣     2⋅a                 ⎦           ⎢           2      ⎥          
-⎪                                               ⎣          a       ⎦          
+            ⎧         ⎡  ⎛  a       ⎞            ⎤                                        
+⎪         ⎢-A⎜- ─ + x, y⎟            ⎥                                        
+⎪         ⎢  ⎝  2       ⎠   ⅈ⋅B(x, y)⎥                                        
+⎪(-1, 0): ⎢───────────────  ─────────⎥, (0, -1): ⎡0         0       ⎤, (0, 0):
+⎪         ⎢        2           2⋅a   ⎥           ⎢                  ⎥         
+⎪         ⎢       a                  ⎥           ⎢     ⎛     a    ⎞ ⎥         
+⎨         ⎢                          ⎥           ⎢   -C⎜x, - ─ + y⎟ ⎥         
+⎪         ⎢ⅈ⋅B(-a + x, y)            ⎥           ⎢     ⎝     2    ⎠ ⎥         
+⎪         ⎢──────────────       0    ⎥           ⎢0  ───────────────⎥         
+⎪         ⎣     2⋅a                  ⎦           ⎢           2      ⎥         
+⎪                                                ⎣          a       ⎦         
 ⎪                                                                             
 ⎩                                                                             
 
-⎡2⋅A                                      ⎤                                   
-⎢───                   0                  ⎥, (0, 1): ⎡0        0      ⎤, (1, 0
-⎢  2                                      ⎥          ⎢                ⎥       
-⎢ a                                       ⎥          ⎢     ⎛   a    ⎞ ⎥       
-⎢                                         ⎥          ⎢   -C⎜x, ─ + y⎟ ⎥       
-⎢               ⎛     a    ⎞    ⎛   a    ⎞⎥          ⎢     ⎝   2    ⎠ ⎥       
-⎢              C⎜x, - ─ + y⎟   C⎜x, ─ + y⎟⎥          ⎢0  ─────────────⎥       
-⎢               ⎝     2    ⎠    ⎝   2    ⎠⎥          ⎢          2     ⎥       
-⎢ 0   sin(x) + ───────────── + ───────────⎥          ⎣         a      ⎦       
-⎢                     2              2    ⎥                                   
-⎣                    a              a     ⎦                                   
+ ⎡ ⎛  a       ⎞    ⎛a       ⎞                                      ⎤          
+ ⎢A⎜- ─ + x, y⎟   A⎜─ + x, y⎟                                      ⎥          
+ ⎢ ⎝  2       ⎠    ⎝2       ⎠                                      ⎥          
+ ⎢───────────── + ───────────                   0                  ⎥, (0, 1): 
+ ⎢       2              2                                          ⎥          
+ ⎢      a              a                                           ⎥          
+ ⎢                                                                 ⎥          
+ ⎢                                       ⎛     a    ⎞    ⎛   a    ⎞⎥          
+ ⎢                                      C⎜x, - ─ + y⎟   C⎜x, ─ + y⎟⎥          
+ ⎢                                       ⎝     2    ⎠    ⎝   2    ⎠⎥          
+ ⎢             0               sin(x) + ───────────── + ───────────⎥          
+ ⎢                                             2              2    ⎥          
+ ⎣                                            a              a     ⎦          
 
-   ⎡      -A         -ⅈ⋅B(x, y) ⎤⎫
-): ⎢      ───        ───────────⎥⎪
-   ⎢        2            2⋅a    ⎥⎪
-   ⎢       a                    ⎥⎪
-   ⎢                            ⎥⎪
-   ⎢-ⅈ⋅B(a + x, y)              ⎥⎬
-   ⎢───────────────       0     ⎥⎪
-   ⎣      2⋅a                   ⎦⎪
-                                 ⎪
-                                 ⎪
-                                 ⎭)
+                            ⎡   ⎛a       ⎞               ⎤⎫
+                            ⎢ -A⎜─ + x, y⎟               ⎥⎪
+                            ⎢   ⎝2       ⎠    -ⅈ⋅B(x, y) ⎥⎪
+⎡0        0      ⎤, (1, 0): ⎢ ─────────────   ───────────⎥⎪
+⎢                ⎥          ⎢        2            2⋅a    ⎥⎪
+⎢     ⎛   a    ⎞ ⎥          ⎢       a                    ⎥⎪
+⎢   -C⎜x, ─ + y⎟ ⎥          ⎢                            ⎥⎬
+⎢     ⎝   2    ⎠ ⎥          ⎢-ⅈ⋅B(a + x, y)              ⎥⎪
+⎢0  ─────────────⎥          ⎢───────────────       0     ⎥⎪
+⎢          2     ⎥          ⎣      2⋅a                   ⎦⎪
+⎣         a      ⎦                                        ⎪
+                                                          ⎪
+                                                          ⎭)
 ```
 
 ```python
->>> tb = magic(H, space_dependent=[A, B, C], discrete_coordinates={'x'}, verbose=True)
-Discrete coordinates set to:  ['x']
+>>> magic(H, space_dependent=[A, B, C], discrete_coordinates={'x', 'y'}, verbose=True);
+Discrete coordinates set to:  ['x', 'y']
 
-Function generated for (0,):
+Function generated for (0, 1):
+def _anonymous_func(site1, site2, p):
+    y, x = site2.pos
+    a = p.a
+    C = p.C
+    return (np.array([[0, 0], [0, -C(x, a/2 + y)/a**2]]))
+
+Function generated for (0, -1):
+def _anonymous_func(site1, site2, p):
+    y, x = site2.pos
+    a = p.a
+    C = p.C
+    return (np.array([[0, 0], [0, -C(x, -a/2 + y)/a**2]]))
+
+Function generated for (1, 0):
+def _anonymous_func(site1, site2, p):
+    y, x = site2.pos
+    a = p.a
+    A, B = p.A, p.B
+    return (np.array([[-A(a/2 + x, y)/a**2, -1.j*B(x, y)/(2*a)], [-1.j*B(a + x, y)/(2*a), 0]]))
+
+Function generated for (0, 0):
 def _anonymous_func(site, p):
-    x = site.pos
-    a, k_y = p.a, p.k_y
+    y, x = site.pos
+    a = p.a
     A, C = p.A, p.C
-    return (np.array([[A(-a/2 + x)/a**2 + A(a/2 + x)/a**2, 0], [0, k_y**2*C(x) + sin(x)]]))
+    return (np.array([[A(-a/2 + x, y)/a**2 + A(a/2 + x, y)/a**2, 0], [0, sin(x) + C(x, -a/2 + y)/a**2 + C(x, a/2 + y)/a**2]]))
 
-Function generated for (-1,):
+Function generated for (-1, 0):
 def _anonymous_func(site1, site2, p):
-    x = site2.pos
+    y, x = site2.pos
     a = p.a
     A, B = p.A, p.B
-    return (np.array([[-A(-a/2 + x)/a**2, 1.j*B(x)/(2*a)], [1.j*B(-a + x)/(2*a), 0]]))
-
-Function generated for (1,):
-def _anonymous_func(site1, site2, p):
-    x = site2.pos
-    a = p.a
-    A, B = p.A, p.B
-    return (np.array([[-A(a/2 + x)/a**2, -1.j*B(x)/(2*a)], [-1.j*B(a + x)/(2*a), 0]]))
+    return (np.array([[-A(-a/2 + x, y)/a**2, 1.j*B(x, y)/(2*a)], [1.j*B(-a + x, y)/(2*a), 0]]))
 ```
 
 ```python
