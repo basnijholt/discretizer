@@ -40,93 +40,43 @@ This will be notebook showing how our stuff works
 ```
 
 ```python
->>> magic(H, space_dependent=[A, B, C], discrete_coordinates={'x', 'y'}, verbose=True,
+>>> magic(H, space_dependent=None, discrete_coordinates={'x'}, verbose=True,
 ...             symbolic_output=True)
-Discrete coordinates set to:  ['x', 'y']
+Discrete coordinates set to:  ['x']
 defaultdict(<function discretizer.algorithms.discretize.<locals>.<lambda>>,
-            ⎧         ⎡  ⎛  a       ⎞            ⎤                                        
-⎪         ⎢-A⎜- ─ + x, y⎟            ⎥                                        
-⎪         ⎢  ⎝  2       ⎠   ⅈ⋅B(x, y)⎥                                        
-⎪(-1, 0): ⎢───────────────  ─────────⎥, (0, -1): ⎡0         0       ⎤, (0, 0):
-⎪         ⎢        2           2⋅a   ⎥           ⎢                  ⎥         
-⎪         ⎢       a                  ⎥           ⎢     ⎛     a    ⎞ ⎥         
-⎨         ⎢                          ⎥           ⎢   -C⎜x, - ─ + y⎟ ⎥         
-⎪         ⎢ⅈ⋅B(-a + x, y)            ⎥           ⎢     ⎝     2    ⎠ ⎥         
-⎪         ⎢──────────────       0    ⎥           ⎢0  ───────────────⎥         
-⎪         ⎣     2⋅a                  ⎦           ⎢           2      ⎥         
-⎪                                                ⎣          a       ⎦         
-⎪                                                                             
-⎩                                                                             
-
- ⎡ ⎛  a       ⎞    ⎛a       ⎞                                      ⎤          
- ⎢A⎜- ─ + x, y⎟   A⎜─ + x, y⎟                                      ⎥          
- ⎢ ⎝  2       ⎠    ⎝2       ⎠                                      ⎥          
- ⎢───────────── + ───────────                   0                  ⎥, (0, 1): 
- ⎢       2              2                                          ⎥          
- ⎢      a              a                                           ⎥          
- ⎢                                                                 ⎥          
- ⎢                                       ⎛     a    ⎞    ⎛   a    ⎞⎥          
- ⎢                                      C⎜x, - ─ + y⎟   C⎜x, ─ + y⎟⎥          
- ⎢                                       ⎝     2    ⎠    ⎝   2    ⎠⎥          
- ⎢             0               sin(x) + ───────────── + ───────────⎥          
- ⎢                                             2              2    ⎥          
- ⎣                                            a              a     ⎦          
-
-                            ⎡   ⎛a       ⎞               ⎤⎫
-                            ⎢ -A⎜─ + x, y⎟               ⎥⎪
-                            ⎢   ⎝2       ⎠    -ⅈ⋅B(x, y) ⎥⎪
-⎡0        0      ⎤, (1, 0): ⎢ ─────────────   ───────────⎥⎪
-⎢                ⎥          ⎢        2            2⋅a    ⎥⎪
-⎢     ⎛   a    ⎞ ⎥          ⎢       a                    ⎥⎪
-⎢   -C⎜x, ─ + y⎟ ⎥          ⎢                            ⎥⎬
-⎢     ⎝   2    ⎠ ⎥          ⎢-ⅈ⋅B(a + x, y)              ⎥⎪
-⎢0  ─────────────⎥          ⎢───────────────       0     ⎥⎪
-⎢          2     ⎥          ⎣      2⋅a                   ⎦⎪
-⎣         a      ⎦                                        ⎪
-                                                          ⎪
-                                                          ⎭)
+            ⎧       ⎡-A   ⅈ⋅B⎤        ⎡2⋅A                 ⎤        ⎡ -A    -ⅈ⋅B ⎤⎫
+⎪(-1,): ⎢───  ───⎥, (0,): ⎢───         0       ⎥, (1,): ⎢ ───   ─────⎥⎪
+⎪       ⎢  2  2⋅a⎥        ⎢  2                 ⎥        ⎢   2    2⋅a ⎥⎪
+⎪       ⎢ a      ⎥        ⎢ a                  ⎥        ⎢  a         ⎥⎪
+⎨       ⎢        ⎥        ⎢                    ⎥        ⎢            ⎥⎬
+⎪       ⎢ⅈ⋅B     ⎥        ⎢          2         ⎥        ⎢-ⅈ⋅B        ⎥⎪
+⎪       ⎢───   0 ⎥        ⎣ 0   C⋅k_y  + sin(x)⎦        ⎢─────    0  ⎥⎪
+⎪       ⎣2⋅a     ⎦                                      ⎣ 2⋅a        ⎦⎪
+⎩                                                                     ⎭)
 ```
 
 ```python
->>> magic(H, space_dependent=[A, B, C], discrete_coordinates={'x', 'y'}, verbose=True);
-Discrete coordinates set to:  ['x', 'y']
+>>> magic(H, space_dependent={'A', 'B', 'C'}, discrete_coordinates={'x'}, verbose=True);
+Discrete coordinates set to:  ['x']
 
-Function generated for (0, 1):
-def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
-    a = p.a
-    C = p.C
-    return (np.array([[0, 0], [0, -C(x, a/2 + y)/a**2]]))
-
-Function generated for (0, -1):
-def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
-    a = p.a
-    C = p.C
-    return (np.array([[0, 0], [0, -C(x, -a/2 + y)/a**2]]))
-
-Function generated for (1, 0):
-def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
-    a = p.a
-    A, B = p.A, p.B
-    return (np.array([[-A(a/2 + x, y)/a**2, -1.j*B(x, y)/(2*a)], [-1.j*B(a + x, y)/(2*a), 0]]))
-
-Function generated for (0, 0):
+Function generated for (0,):
 def _anonymous_func(site, p):
-    y, x = site.pos
-    a = p.a
+    x = site.pos
+    a, k_y = p.a, p.k_y
     A, C = p.A, p.C
-    return (np.array([[A(-a/2 + x, y)/a**2 + A(a/2 + x, y)/a**2, 0], [0, sin(x) + C(x, -a/2 + y)/a**2 + C(x, a/2 + y)/a**2]]))
+    return (np.array([[A(-a/2 + x)/a**2 + A(a/2 + x)/a**2, 0], [0, k_y**2*C(x) + sin(x)]]))
 
-Function generated for (-1, 0):
+Function generated for (-1,):
 def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
+    x = site2.pos
     a = p.a
     A, B = p.A, p.B
-    return (np.array([[-A(-a/2 + x, y)/a**2, 1.j*B(x, y)/(2*a)], [1.j*B(-a + x, y)/(2*a), 0]]))
-```
+    return (np.array([[-A(-a/2 + x)/a**2, 1.j*B(x)/(2*a)], [1.j*B(-a + x)/(2*a), 0]]))
 
-```python
-
+Function generated for (1,):
+def _anonymous_func(site1, site2, p):
+    x = site2.pos
+    a = p.a
+    A, B = p.A, p.B
+    return (np.array([[-A(a/2 + x)/a**2, -1.j*B(x)/(2*a)], [-1.j*B(a + x)/(2*a), 0]]))
 ```

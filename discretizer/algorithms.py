@@ -35,56 +35,39 @@ def substitute_functions(expression, discrete_coordinates=None,
                          space_dependent=None):
     """Substitute `AppliedUndef` functions into expression."""
 
+    if not isinstance(discrete_coordinates, (type(None), set)):
+        raise TypeError("discrete_coordinates should be of type None or set")
+
+    if not isinstance(space_dependent, (type(None), set)):
+        raise TypeError("space_dependent should be of type None or set")
+
     if isinstance(expression, (int, float, sympy.Integer, sympy.Float)):
         if discrete_coordinates is None:
             discrete_coordinates = set()
         return expression, discrete_coordinates
 
-    def check_spatial_dependence(expression):
-        """Check which spatial coordinates are present in hamiltonian."""
-        found_coordinates = set()
+    if discrete_coordinates is None:
+        discrete_coordinates = set()
         for s in expression.atoms(sympy.Symbol):
             s = s.name
             if s in ['x', 'y', 'z']:
-                found_coordinates.add(s)
+                discrete_coordinates.add(s)
             if s in ['k_x', 'k_y', 'k_z']:
-                found_coordinates.add(s.split('_')[1])
-        return found_coordinates
-
-    if discrete_coordinates is None:
-        discrete_coordinates = check_spatial_dependence(expression)
+                discrete_coordinates.add(s.split('_')[1])
 
     if space_dependent is None:
-        space_dependent = {}
+        space_dependent = set()
 
-    elif isinstance(space_dependent, (tuple, list, set)):
-        coordinates = list(sorted(discrete_coordinates))
-        space_dependent = {s: coordinates for s in space_dependent}
+    space_dependent = {s for s in expression.atoms(sympy.Symbol)
+                       if s.name in space_dependent}
 
-    elif isinstance(space_dependent, dict):
-        for v in space_dependent.values():
-            if not isinstance(v, set):
-                raise TypeError('If discrete_coordinates is of type dict ' +
-                                 'its values should be of type set.')
-            discrete_coordinates = discrete_coordinates | v
-
-        space_dependent = {k: list(sorted(v)) for k,v in space_dependent.items()}
-
-    else:
-        raise TypeError("space_dependent should be of type None, tuple, list, set or dict")
-
-    subs = {}
-    for s, v in space_dependent.items():
-        if isinstance(v, (tuple, list, set)):
-            subs[s] = s(*sympy.symbols(v, commutative=False))
-        else:
-            subs[s] = s(sympy.Symbol(v, commutative=False))
-
-    expression = expression.subs(subs)
-
-    coordinates = [sympy.Symbol(s, commutative=False) for s in discrete_coordinates]
-    momentum_names = ['k_{}'.format(s) for s in discrete_coordinates]
+    names = sorted(list(discrete_coordinates))
+    coordinates = [sympy.Symbol(s, commutative=False) for s in names]
+    momentum_names = ['k_{}'.format(s) for s in names]
     momentum_operators = sympy.symbols(momentum_names, commutative=False)
+
+    subs = {s: s(*coordinates) for s in space_dependent}
+    expression = expression.subs(subs)
 
     constants = expression.atoms(sympy.Symbol)
     constants = constants - set(momentum_operators) - set(coordinates)
