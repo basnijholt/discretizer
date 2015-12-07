@@ -128,8 +128,13 @@ def split_factors(expression, discrete_coordinates):
     output = {'rhs': [1], 'operator': [1], 'lhs': [1]}
 
     if isinstance(expression, sympy.Pow):
-        output['operator'].append(expression.args[0])
-        output['lhs'].append(sympy.Pow(expression.args[0], expression.args[1]-1))
+        base, exponent = expression.args
+        if base in momentum_operators:
+            output['operator'].append(base)
+            output['lhs'].append(sympy.Pow(base, exponent-1))
+        else:
+            output['rhs'].append(expression)
+
 
     elif isinstance(expression, (int, float, sympy.Integer, sympy.Float)):
         output['rhs'].append(expression)
@@ -147,10 +152,9 @@ def split_factors(expression, discrete_coordinates):
                 output['operator'].append(factor)
                 break
             elif factor.func == sympy.Pow and factor.args[0] in momentum_operators:
-                operator = factor.args[0]
-                power = factor.args[1]
-                output['operator'].append(operator)
-                output['lhs'].append(sympy.Pow(operator, power-1))
+                base, exponent = factor.args
+                output['operator'].append(base)
+                output['lhs'].append(sympy.Pow(base, exponent-1))
                 break
             else:
                 output['rhs'].append(factor)
