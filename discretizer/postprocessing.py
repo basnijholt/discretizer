@@ -9,6 +9,39 @@ class NumericPrinter(LambdaPrinter):
         return "1.j"
 
 
+def offset_to_direction(discrete_hamiltonian, discrete_coordinates):
+    """Translate hopping keys from offsets to directions.
+
+    Parameters:
+    -----------
+    discrete_hamiltonian: dict
+        Discretized hamiltonian, key should be an offset of a hopping and value
+        corresponds to symbolic hopping.
+    discrete_coordinates: set
+        Set of discrete coordinates.
+
+    Returns:
+    --------
+    discrete_hamiltonian: dict
+        Discretized hamiltonian, key is a direction of a hopping and value
+        corresponds to symbolic hopping.
+
+    Note:
+    -----
+    Coordinates (x,y,z) in output stands for a position of a source of the
+    hopping.
+    """
+    coordinates = sorted(list(discrete_coordinates))
+    coordinates = [sympy.Symbol(s, commutative=False) for s in coordinates]
+    a = sympy.Symbol('a')
+
+    output = {}
+    for offset, hopping in discrete_hamiltonian.items():
+        direction = tuple(-c for c in offset)
+        subs = {c: c + d*a for c, d in zip(coordinates, direction)}
+        output[direction] = hopping.subs(subs)
+
+    return output
 
 # ************ Making kwant functions ***********
 def make_return_string(expr):

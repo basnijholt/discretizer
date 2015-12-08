@@ -4,6 +4,7 @@ import numpy as np
 from collections import defaultdict
 
 from .postprocessing import make_kwant_functions
+from .postprocessing import offset_to_direction
 
 
 # ************************** Some globals *********************************
@@ -12,7 +13,7 @@ wavefunction_name = 'Psi'
 
 # ************************* Main interface functions ***********************
 def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
-          verbose=False, symbolic_output=False):
+          verbose=False, symbolic_output=False, all_hoppings=False):
     """Just testing."""
     tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
     hamiltonian, discrete_coordinates = tmp
@@ -21,12 +22,18 @@ def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
         print('Discrete coordinates set to: ', sorted(discrete_coordinates))
         print()
 
-    discrete_hamiltonian = discretize(hamiltonian, discrete_coordinates)
+    tb_hamiltonian = discretize(hamiltonian, discrete_coordinates)
+    tb_hamiltonian = offset_to_direction(tb_hamiltonian, discrete_coordinates)
+
+    if not all_hoppings:
+        keys = list(tb_hamiltonian)
+        new_keys = sorted(keys)[len(keys)//2:]
+        tb_hamiltonian = {k: v for k, v in tb_hamiltonian.items() if k in new_keys}
 
     if symbolic_output:
-        return discrete_hamiltonian
+        return tb_hamiltonian
 
-    tb = make_kwant_functions(discrete_hamiltonian, discrete_coordinates, verbose)
+    tb = make_kwant_functions(tb_hamiltonian, discrete_coordinates, verbose)
     return tb
 
 
@@ -338,8 +345,8 @@ def read_hopping_from_wf(wf):
         msg = 'Input should be function that represents wavefunction in module.'
         raise TypeError(msg)
 
-    # below is to check if input is consistent and in lexical order
-    # this are more checks for internal usage
+    # Check if input is consistent and in lexical order.
+    # These are more checks for internal usage.
     coordinates_names = ['x', 'y', 'z']
     lattice_const_names = ['a_x', 'a_y', 'a_z']
     arg_coords = []
