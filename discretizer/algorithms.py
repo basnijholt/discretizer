@@ -14,10 +14,10 @@ wavefunction_name = 'Psi'
 
 
 # ************************* Main interface functions ***********************
-def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
+def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
           symbolic_output=False, all_hoppings=False, interpolate=False,
           verbose=False):
-    """Get tight binding representation of a Hamiltonian that can be passed to kwant.
+    """Get tight binding representation of a Hamiltonian that can be passed to Kwant.
 
     Parameters:
     -----------
@@ -52,7 +52,7 @@ def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
         A dictionary with keys being tuples of the lattice hopping, and values
         the corresponding value functions.
     """
-    tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
+    tmp = substitute_functions(hamiltonian, space_dependent, discrete_coordinates)
     hamiltonian, discrete_coordinates = tmp
 
     if verbose:
@@ -77,9 +77,28 @@ def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
 
 
 # **************** Operation on sympy expressions **************************
-def substitute_functions(expression, discrete_coordinates=None,
-                         space_dependent=None):
-    """Substitute `AppliedUndef` functions into expression."""
+def substitute_functions(expression, space_dependent=None,
+                         discrete_coordinates=None):
+    """Substitute `AppliedUndef` functions into expression.
+
+    Parameters:
+    -----------
+    expression : sympy.Expr or sympy.Matrix instance
+    space_dependent : set of strings
+        Every symbol which name appears here will be substituted with a function
+        of discrete coordinates.
+    discrete_coordinates : set of strings
+        Set of coordinates that are treat as discrete. If left as a None they
+        will be obtained from the input expression by reading present
+        coordinates and momentum operators.
+
+    Returns:
+    --------
+    expression : sympy.Expr or sympy.Matrix instance
+        Input expression with all symbols representing space dependendent
+        parameters substituted with functions of coordinates and all
+        symbols representing constants substituted with commutative symbols.
+    """
 
     if not isinstance(discrete_coordinates, (type(None), set)):
         raise TypeError("discrete_coordinates should be of type None or set")
@@ -210,16 +229,6 @@ def derivate(expression, operator):
     --------
     output : sympy.Expr instance
         Derivated input expression.
-
-    Examples:
-    ---------
-    >>> from discretizer.algorithms import derivate
-    >>> import sympy
-    >>> A = sympy.Function('A')
-    >>> x = sympy.Symbol('x')
-    >>> kx = sympy.Symbol('k_x')
-    >>> derivate(A(x), kx)
-    -I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))
     """
     if not isinstance(operator, sympy.Symbol):
         raise TypeError("Input operator '{}' is not type sympy.Symbol.")
@@ -324,7 +333,7 @@ def discretize(hamiltonian, discrete_coordinates):
 
     Parameters:
     -----------
-    hamiltonian : sympy.Expr instance
+    hamiltonian : sympy.Expr or sympy.Matrix instance
         The expression for the Hamiltonian.
 
     Returns:
