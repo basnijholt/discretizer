@@ -6,6 +6,8 @@ from collections import defaultdict
 from .postprocessing import make_kwant_functions
 from .postprocessing import offset_to_direction
 
+from .interpolation import interpolate_tb_hamiltonian
+
 
 # ************************** Some globals *********************************
 wavefunction_name = 'Psi'
@@ -13,7 +15,8 @@ wavefunction_name = 'Psi'
 
 # ************************* Main interface functions ***********************
 def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
-          symbolic_output=False, all_hoppings=False, verbose=False):
+          symbolic_output=False, all_hoppings=False, interpolate=False,
+          verbose=False):
     """Get tight binding representation of a Hamiltonian that can be passed to kwant.
 
     Parameters:
@@ -34,17 +37,20 @@ def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
     all_hoppings : bool
         If True all hoppings will be returned. For example, if set to True, both
         hoppings into (1, 0) and (-1, 0) will be returned. Default is False.
+    interpolate : bool
+        If True all space dependent parameters in onsite and hopping functions
+        will be interpolated to depenend only on the values at site positions.
+        Default is False.
     verbose : bool
         If True additional information will be printed. Default is False.
 
     Returns:
     --------
-    discretized_hamiltonian : dict
-        A dictionary list containing tight binding representation of the input
-        Hamiltonian. Keys are tuples of a hopping's direction and values are
-        corresponding value functions ready to be passed to Kwant.
-
-        If symbolic_output is True values will stand for a symbolic hoppings.
+    onsite : function
+        The value of the onsite Hamiltonian.
+    hoppings : dict
+        A dictionary with keys being tuples of the lattice hopping, and values
+        the corresponding value functions.
     """
     tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
     hamiltonian, discrete_coordinates = tmp
@@ -55,6 +61,8 @@ def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
 
     tb_hamiltonian = discretize(hamiltonian, discrete_coordinates)
     tb_hamiltonian = offset_to_direction(tb_hamiltonian, discrete_coordinates)
+    if interpolate:
+        tb_hamiltonian = interpolate_tb_hamiltonian(tb_hamiltonian)
 
     if not all_hoppings:
         keys = list(tb_hamiltonian)
@@ -62,7 +70,7 @@ def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
         tb_hamiltonian = {k: v for k, v in tb_hamiltonian.items() if k in new_keys}
 
     if symbolic_output:
-        return tb_hamiltonian
+        return tb_hamiltonian.pop((0,)*len(discrete_coordinates)), tb_hamiltonian
 
     tb = make_kwant_functions(tb_hamiltonian, discrete_coordinates, verbose)
     return tb.pop((0,)*len(discrete_coordinates)), tb
