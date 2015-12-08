@@ -254,17 +254,17 @@ def _discretize_expression(expression, discrete_coordinates):
 
     expression = sympy.expand(expression*wf)
 
-    if expression.func == sympy.Add:
-        summands = expression.args
-    else:
-        summands = [expression]
+    # make sure we have list of summands
+    summands = expression.args if expression.func == sympy.Add else [expression]
 
+    # discretize every summand
     outputs = []
     for summand in summands:
         out = _discretize_summand(summand, discrete_coordinates)
         out = extract_hoppings(out, discrete_coordinates)
         outputs.append(out)
 
+    # gather together
     discrete_expression = defaultdict(int)
     for summand in outputs:
         for k, v in summand.items():
@@ -390,40 +390,24 @@ def read_hopping_from_wf(wf):
     return tuple(offset)
 
 
-def extract_hoppings(expr, discrete_coordinates):
+def extract_hoppings(expression, discrete_coordinates):
     """Extract hopping and perform shortening operation. """
-    # START: hopping extraction
-    # this line should be unneccessary in the long run. Now I want to avoid errors due to wrong formats of the input.
-    expr = sympy.expand(expr)
 
-    # The output will be stored in a dictionary, with terms for each hopping kind
-    # This format is probably not good in the long run
+    # make sure we have list of summands
+    expression = sympy.expand(expression)
+    summands = expression.args if expression.func == sympy.Add else [expression]
+
     hoppings = defaultdict(int)
-
-    if expr.func == sympy.Add:
-        for summand in expr.args:
-            #find a way to make it readable
-            if not summand.func.__name__ == wavefunction_name:
-                for i in range(len(summand.args)):
-                    if summand.args[i].func.__name__ == wavefunction_name:
-                        index = i
-                if index < len(summand.args) - 1:
-                    print('Psi is not in the very end of the term. Output will be wrong!')
-                hoppings[read_hopping_from_wf(summand.args[-1])] += sympy.Mul(*summand.args[:-1])
-            else:
-                hoppings[read_hopping_from_wf(summand)] += 1
-
-    else:
-        if not expr.func.__name__ == wavefunction_name:
-            for i in range(len(expr.args)):
-                if expr.args[i].func.__name__ == wavefunction_name:
-                    index = i
-            if index < len(expr.args) - 1:
-                print('Psi is not in the very end of the term. Output will be wrong!')
-
-            hoppings[read_hopping_from_wf(expr.args[-1])] += sympy.Mul(*expr.args[:-1])
+    for summand in summands:
+        if summand.func.__name__ == wavefunction_name:
+            hoppings[read_hopping_from_wf(summand)] += 1
         else:
-            hoppings[read_hopping_from_wf(expr)] += 1
+            for i in range(len(summand.args)):
+                if summand.args[i].func.__name__ == wavefunction_name:
+                    index = i
+            if index < len(summand.args) - 1:
+                print('Psi is not in the very end of the term. Output will be wrong!')
+            hoppings[read_hopping_from_wf(summand.args[-1])] += sympy.Mul(*summand.args[:-1])
 
     # START: shortenig
     discrete_coordinates = sorted(list(discrete_coordinates))

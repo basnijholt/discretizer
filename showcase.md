@@ -18,6 +18,10 @@ This will be notebook showing how our stuff works
 >>> from discretizer.postprocessing import make_kwant_functions
 ```
 
+```python
+>>> from discretizer.algorithms import magic
+```
+
 ## Defining sample expression
 
 ```python
@@ -25,58 +29,70 @@ This will be notebook showing how our stuff works
 >>> x, y, z = discretizer.coordinates
 ...
 >>> A, B, C = sympy.symbols('A B C', commutative=False)
->>> H = sympy.Matrix([[kx*A*kx, B*kx], [kx*B, ky*C*ky+sympy.sin(x)]])
+>>> # H = sympy.Matrix([[kx*A*kx, B*kx], [kx*B, ky*C*ky+kx*sympy.sin(x)]])
+... H = kx*A*kx + kx*B + C
 ```
 
 ```python
 >>> H
-⎡kₓ⋅A⋅kₓ         B⋅kₓ       ⎤
-⎢                           ⎥
-⎣ kₓ⋅B    k_y⋅C⋅k_y + sin(x)⎦
+C + kₓ⋅A⋅kₓ + kₓ⋅B
 ```
 
 ```python
->>> from discretizer.algorithms import magic
+>>> hamiltonian = H
+>>> space_dependent = {'A', 'B', 'C'}
+>>> discrete_coordinates = {'x'}
 ```
 
 ```python
->>> magic(H, space_dependent=None, discrete_coordinates={'x'}, verbose=True,
-...             symbolic_output=True)
+>>> magic(hamiltonian, space_dependent, discrete_coordinates, verbose=True, symbolic_output=True)
 Discrete coordinates set to:  ['x']
-defaultdict(<function discretizer.algorithms.discretize.<locals>.<lambda>>,
-            ⎧       ⎡-A   ⅈ⋅B⎤        ⎡2⋅A                 ⎤        ⎡ -A    -ⅈ⋅B ⎤⎫
-⎪(-1,): ⎢───  ───⎥, (0,): ⎢───         0       ⎥, (1,): ⎢ ───   ─────⎥⎪
-⎪       ⎢  2  2⋅a⎥        ⎢  2                 ⎥        ⎢   2    2⋅a ⎥⎪
-⎪       ⎢ a      ⎥        ⎢ a                  ⎥        ⎢  a         ⎥⎪
-⎨       ⎢        ⎥        ⎢                    ⎥        ⎢            ⎥⎬
-⎪       ⎢ⅈ⋅B     ⎥        ⎢          2         ⎥        ⎢-ⅈ⋅B        ⎥⎪
-⎪       ⎢───   0 ⎥        ⎣ 0   C⋅k_y  + sin(x)⎦        ⎢─────    0  ⎥⎪
-⎪       ⎣2⋅a     ⎦                                      ⎣ 2⋅a        ⎦⎪
-⎩                                                                     ⎭)
+⎧                      ⎛  a    ⎞                ⎛  a    ⎞    ⎛a    ⎞          
+⎪                     A⎜- ─ + x⎟               A⎜- ─ + x⎟   A⎜─ + x⎟          
+⎪       ⅈ⋅B(-a + x)    ⎝  2    ⎠                ⎝  2    ⎠    ⎝2    ⎠          
+⎨(-1,): ─────────── - ──────────, (0,): C(x) + ────────── + ────────, (1,): - 
+⎪           2⋅a            2                        2           2             
+⎪                         a                        a           a              
+⎩                                                                             
+
+              ⎛a    ⎞⎫
+             A⎜─ + x⎟⎪
+ⅈ⋅B(a + x)    ⎝2    ⎠⎪
+────────── - ────────⎬
+   2⋅a           2   ⎪
+                a    ⎪
+                     ⎭
 ```
 
 ```python
->>> magic(H, space_dependent={'A', 'B', 'C'}, discrete_coordinates={'x'}, verbose=True);
+>>> magic(hamiltonian, space_dependent, discrete_coordinates, verbose=True, symbolic_output=False)
 Discrete coordinates set to:  ['x']
 
 Function generated for (0,):
 def _anonymous_func(site, p):
     x = site.pos
-    a, k_y = p.a, p.k_y
-    A, C = p.A, p.C
-    return (np.array([[A(-a/2 + x)/a**2 + A(a/2 + x)/a**2, 0], [0, k_y**2*C(x) + sin(x)]]))
+    a = p.a
+    C, A = p.C, p.A
+    return (C(x) + A(-a/2 + x)/a**2 + A(a/2 + x)/a**2)
 
 Function generated for (-1,):
 def _anonymous_func(site1, site2, p):
     x = site2.pos
     a = p.a
-    A, B = p.A, p.B
-    return (np.array([[-A(-a/2 + x)/a**2, 1.j*B(x)/(2*a)], [1.j*B(-a + x)/(2*a), 0]]))
+    B, A = p.B, p.A
+    return (1.j*B(-a + x)/(2*a) - A(-a/2 + x)/a**2)
 
 Function generated for (1,):
 def _anonymous_func(site1, site2, p):
     x = site2.pos
     a = p.a
-    A, B = p.A, p.B
-    return (np.array([[-A(a/2 + x)/a**2, -1.j*B(x)/(2*a)], [-1.j*B(a + x)/(2*a), 0]]))
+    B, A = p.B, p.A
+    return (-1.j*B(a + x)/(2*a) - A(a/2 + x)/a**2)
+{(-1,): <function _anonymous_func>,
+ (0,): <function _anonymous_func>,
+ (1,): <function _anonymous_func>}
+```
+
+```python
+
 ```
