@@ -12,9 +12,40 @@ wavefunction_name = 'Psi'
 
 
 # ************************* Main interface functions ***********************
-def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
-          verbose=False, symbolic_output=False, all_hoppings=False):
-    """Just testing."""
+def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
+          symbolic_output=False, all_hoppings=False, verbose=False):
+    """Get tight binding representation of a Hamiltonian that can be passed to kwant.
+
+    Parameters:
+    -----------
+    hamiltonian : sympy.Expr or sympy.Matrix instance
+        Symbolic representation of a continous Hamiltonian. Momentum operators
+        should be taken from ``discretizer.momentum_operators``.
+    space_dependent : set
+        Set of space dependent parameters. Every parameter mentioned here will
+        be interpreted as a function of discrete coordinates. This should be a set
+        of strings, for example ``space_dependent={'A', 'B'}``.
+    discrete_coordinates : set
+        Set of discrete coordinates. Corresponding momentum operators will be
+        treated as differential operators. This should be a set of strings, for
+        example ``discrete_coordinates={'x', 'y'}``.
+    symbolic_output : bool
+        If True a symbolic hoppings and onsite will be returned. Default is False.
+    all_hoppings : bool
+        If True all hoppings will be returned. For example, if set to True, both
+        hoppings into (1, 0) and (-1, 0) will be returned. Default is False.
+    verbose : bool
+        If True additional information will be printed. Default is False.
+
+    Returns:
+    --------
+    discretized_hamiltonian : dict
+        A dictionary list containing tight binding representation of the input
+        Hamiltonian. Keys are tuples of a hopping's direction and values are
+        corresponding value functions ready to be passed to Kwant.
+
+        If symbolic_output is True values will stand for a symbolic hoppings.
+    """
     tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
     hamiltonian, discrete_coordinates = tmp
 
@@ -34,7 +65,7 @@ def magic(hamiltonian, space_dependent=None, discrete_coordinates=None,
         return tb_hamiltonian
 
     tb = make_kwant_functions(tb_hamiltonian, discrete_coordinates, verbose)
-    return tb
+    return tb.pop((0,)*len(discrete_coordinates)), tb
 
 
 # **************** Operation on sympy expressions **************************
