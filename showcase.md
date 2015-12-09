@@ -23,8 +23,9 @@ This will be notebook showing how our stuff works
 >>> kx, ky, kz = momentum_operators
 ...
 >>> A, B, C = sympy.symbols('A B C', commutative=False)
->>> H = sympy.Matrix([[kx*A*kx +ky*A*ky, kx*B], [B*kx, C]]); H
-⎡kₓ⋅A⋅kₓ + k_y⋅A⋅k_y  kₓ⋅B⎤
+>>> H = sympy.Matrix([[kx*A*kx +ky*A*ky, kx*B.conjugate()], [B*kx, C]]); H
+⎡                        _⎤
+⎢kₓ⋅A⋅kₓ + k_y⋅A⋅k_y  kₓ⋅B⎥
 ⎢                         ⎥
 ⎣       B⋅kₓ           C  ⎦
 ```
@@ -33,42 +34,50 @@ This will be notebook showing how our stuff works
 >>> space_dependent = {'A', 'B'}
 >>> discrete_coordinates = {'x', 'y'}
 ...
->>> ons, hops = tb_hamiltonian(H, space_dependent, discrete_coordinates, verbose=True,
-...                            symbolic_output=True, all_hoppings=False, interpolate=True)
+>>> lat, ons, hops = tb_hamiltonian(H, space_dependent, discrete_coordinates, verbose=True,
+...                                 symbolic_output=True, return_conjugated_hops=True,
+...                                 interpolate=True)
+>>> ons, hops
 Discrete coordinates set to:  ['x', 'y']
-```
+⎛                                                                          ⎧  
+⎜⎡2⋅A(x, y)   A(x, -a + y)   A(x, a + y)   A(-a + x, y)   A(a + x, y)   ⎤  ⎪  
+⎜⎢───────── + ──────────── + ─────────── + ──────────── + ───────────  0⎥, ⎪(-
+⎜⎢     2             2              2             2              2      ⎥  ⎪  
+⎜⎢    a           2⋅a            2⋅a           2⋅a            2⋅a       ⎥  ⎨  
+⎜⎢                                                                      ⎥  ⎪  
+⎜⎣                                 0                                   C⎦  ⎪  
+⎜                                                                          ⎪  
+⎝                                                                          ⎩  
 
-```python
->>> ons
-⎡2⋅A(x, y)   A(x, -a + y)   A(x, a + y)   A(-a + x, y)   A(a + x, y)   ⎤
-⎢───────── + ──────────── + ─────────── + ──────────── + ───────────  0⎥
-⎢     2             2              2             2              2      ⎥
-⎢    a           2⋅a            2⋅a           2⋅a            2⋅a       ⎥
-⎢                                                                      ⎥
-⎣                                 0                                   C⎦
-```
+       ⎡                             _______ ⎤                                
+       ⎢  A(x, y)   A(-a + x, y)  -ⅈ⋅B(x, y) ⎥           ⎡  A(x, y)   A(x, -a 
+1, 0): ⎢- ─────── - ────────────  ───────────⎥, (0, -1): ⎢- ─────── - ────────
+       ⎢       2           2          2⋅a    ⎥           ⎢       2           2
+       ⎢    2⋅a         2⋅a                  ⎥           ⎢    2⋅a         2⋅a 
+       ⎢                                     ⎥           ⎢                    
+       ⎢    -ⅈ⋅B(-a + x, y)                  ⎥           ⎣           0        
+       ⎢    ────────────────           0     ⎥                                
+       ⎣          2⋅a                        ⎦                                
 
-```python
->>> hops
-⎧        ⎡  A(x, y)   A(x, a + y)   ⎤          ⎡  A(x, y)   A(a + x, y)  ⅈ⋅B(x
-⎪(0, 1): ⎢- ─────── - ───────────  0⎥, (1, 0): ⎢- ─────── - ───────────  ─────
-⎪        ⎢       2           2      ⎥          ⎢       2           2        2⋅
-⎪        ⎢    2⋅a         2⋅a       ⎥          ⎢    2⋅a         2⋅a           
-⎨        ⎢                          ⎥          ⎢                              
-⎪        ⎣           0             0⎦          ⎢     ⅈ⋅B(a + x, y)            
-⎪                                              ⎢     ─────────────           0
-⎪                                              ⎣          2⋅a                 
-⎩                                                                             
+                                                        ⎡                     
++ y)   ⎤          ⎡  A(x, y)   A(x, a + y)   ⎤          ⎢  A(x, y)   A(a + x, 
+────  0⎥, (0, 1): ⎢- ─────── - ───────────  0⎥, (1, 0): ⎢- ─────── - ─────────
+       ⎥          ⎢       2           2      ⎥          ⎢       2           2 
+       ⎥          ⎢    2⋅a         2⋅a       ⎥          ⎢    2⋅a         2⋅a  
+       ⎥          ⎢                          ⎥          ⎢                     
+      0⎦          ⎣           0             0⎦          ⎢     ⅈ⋅B(a + x, y)   
+                                                        ⎢     ─────────────   
+                                                        ⎣          2⋅a        
 
-, y)⎤⎫
-────⎥⎪
-a   ⎥⎪
-    ⎥⎪
-    ⎥⎬
-    ⎥⎪
-    ⎥⎪
-    ⎦⎪
-     ⎭
+      _______⎤⎫⎞
+y)  ⅈ⋅B(x, y)⎥⎪⎟
+──  ─────────⎥⎪⎟
+       2⋅a   ⎥⎪⎟
+             ⎥⎬⎟
+             ⎥⎪⎟
+             ⎥⎪⎟
+        0    ⎥⎪⎟
+             ⎦⎭⎠
 ```
 
 ```python
@@ -84,8 +93,8 @@ def _anonymous_func(site1, site2, p):
 Function generated for (1, 0):
 def _anonymous_func(site1, site2, p):
     x, y = site2.pos
-    A, B = p.A, p.B
-    return (np.array([[-4.0*A(0.25 + x, y), 1.0*1.j*B(x, y)], [1.0*1.j*B(0.5 + x, y), 0]]))
+    B, A = p.B, p.A
+    return (np.array([[-4.0*A(0.25 + x, y), 1.0*1.j*conjugate(B(x, y))], [1.0*1.j*B(0.5 + x, y), 0]]))
 
 Function generated for (0, 0):
 def _anonymous_func(site, p):
@@ -93,13 +102,4 @@ def _anonymous_func(site, p):
     C = p.C
     A = p.A
     return (np.array([[4.0*A(x, -0.25 + y) + 4.0*A(x, 0.25 + y) + 4.0*A(-0.25 + x, y) + 4.0*A(0.25 + x, y), 0], [0, C]]))
-```
-
-```python
->>> lat
-kwant.lattice.Monatomic([[0.5, 0.0], [0.0, 0.5]], [0.0, 0.0], '')
-```
-
-```python
-
 ```

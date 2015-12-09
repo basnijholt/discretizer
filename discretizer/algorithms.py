@@ -21,8 +21,8 @@ wavefunction_name = 'Psi'
 
 # ************************* Main interface functions ***********************
 def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
-                   lattice_constant=1, symbolic_output=False, all_hoppings=False,
-                   interpolate=False, verbose=False):
+                   lattice_constant=1, interpolate=False, symbolic_output=False,
+                   return_conjugated_hops=False, verbose=False):
     """Get tight binding representation of a Hamiltonian that can be passed to Kwant.
 
     Parameters:
@@ -40,7 +40,7 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
         example ``discrete_coordinates={'x', 'y'}``.
     symbolic_output : bool
         If True a symbolic hoppings and onsite will be returned. Default is False.
-    all_hoppings : bool
+    return_conjugated_hops : bool
         If True all hoppings will be returned. For example, if set to True, both
         hoppings into (1, 0) and (-1, 0) will be returned. Default is False.
     interpolate : bool
@@ -52,6 +52,9 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
 
     Returns:
     --------
+    lattice : kwant.lattice.Monatomic instance
+        Lattice to create kwant system. Lattice constant is set to
+        lattice_constant value.
     onsite : function
         The value of the onsite Hamiltonian.
     hoppings : dict
@@ -61,6 +64,9 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
     # preprocessing
     tmp = substitute_functions(hamiltonian, space_dependent, discrete_coordinates)
     hamiltonian, discrete_coordinates = tmp
+
+    dim = len(discrete_coordinates)
+    lat = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
 
     if verbose:
         print('Discrete coordinates set to: ', sorted(discrete_coordinates))
@@ -73,23 +79,20 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
     if interpolate:
         tb_hamiltonian = interpolate_tb_hamiltonian(tb_hamiltonian)
 
-    if not all_hoppings:
+    if not return_conjugated_hops:
         keys = list(tb_hamiltonian)
         new_keys = sorted(keys)[len(keys)//2:]
         tb_hamiltonian = {k: v for k, v in tb_hamiltonian.items() if k in new_keys}
 
     if symbolic_output:
-        return tb_hamiltonian.pop((0,)*len(discrete_coordinates)), tb_hamiltonian
+        ons = tb_hamiltonian.pop((0,)*len(discrete_coordinates))
+        return lat, ons, tb_hamiltonian
 
     for key, val in tb_hamiltonian.items():
         tb_hamiltonian[key] = val.subs(sympy.Symbol('a'), lattice_constant)
 
-    # making kwant functions and kwant lattice
+    # making kwant functions
     tb = make_kwant_functions(tb_hamiltonian, discrete_coordinates, verbose)
-
-    dim = len(discrete_coordinates)
-    lat = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
-
     return lat, tb.pop((0,)*len(discrete_coordinates)), tb
 
 
