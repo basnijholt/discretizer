@@ -58,6 +58,7 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
         A dictionary with keys being tuples of the lattice hopping, and values
         the corresponding value functions.
     """
+    # preprocessing
     tmp = substitute_functions(hamiltonian, space_dependent, discrete_coordinates)
     hamiltonian, discrete_coordinates = tmp
 
@@ -65,6 +66,7 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
         print('Discrete coordinates set to: ', sorted(discrete_coordinates))
         print()
 
+    # discretization
     tb_hamiltonian = discretize(hamiltonian, discrete_coordinates)
     tb_hamiltonian = offset_to_direction(tb_hamiltonian, discrete_coordinates)
 
@@ -82,6 +84,7 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
     for key, val in tb_hamiltonian.items():
         tb_hamiltonian[key] = val.subs(sympy.Symbol('a'), lattice_constant)
 
+    # making kwant functions and kwant lattice
     tb = make_kwant_functions(tb_hamiltonian, discrete_coordinates, verbose)
 
     dim = len(discrete_coordinates)
