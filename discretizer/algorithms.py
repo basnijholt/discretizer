@@ -1,5 +1,4 @@
 import itertools
-from kwant.lattice import Monatomic
 import sympy
 import numpy as np
 from collections import defaultdict
@@ -9,6 +8,12 @@ from .postprocessing import offset_to_direction
 
 from .interpolation import interpolate_tb_hamiltonian
 
+try:
+    # normal situation
+    from kwant.lattice import Monatomic
+except ImportError:
+    # probably run on gitlab-ci
+    pass
 
 # ************************** Some globals *********************************
 wavefunction_name = 'Psi'
@@ -81,7 +86,7 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
 
     dim = len(discrete_coordinates)
     lat = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
-    
+
     return lat, tb.pop((0,)*len(discrete_coordinates)), tb
 
 
