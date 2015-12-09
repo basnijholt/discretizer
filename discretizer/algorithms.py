@@ -1,4 +1,5 @@
 import itertools
+from kwant.lattice import Monatomic
 import sympy
 import numpy as np
 from collections import defaultdict
@@ -15,8 +16,8 @@ wavefunction_name = 'Psi'
 
 # ************************* Main interface functions ***********************
 def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
-          symbolic_output=False, all_hoppings=False, interpolate=False,
-          verbose=False):
+                   lattice_constant=1, symbolic_output=False, all_hoppings=False,
+                   interpolate=False, verbose=False):
     """Get tight binding representation of a Hamiltonian that can be passed to Kwant.
 
     Parameters:
@@ -61,6 +62,7 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
 
     tb_hamiltonian = discretize(hamiltonian, discrete_coordinates)
     tb_hamiltonian = offset_to_direction(tb_hamiltonian, discrete_coordinates)
+
     if interpolate:
         tb_hamiltonian = interpolate_tb_hamiltonian(tb_hamiltonian)
 
@@ -72,8 +74,15 @@ def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
     if symbolic_output:
         return tb_hamiltonian.pop((0,)*len(discrete_coordinates)), tb_hamiltonian
 
+    for key, val in tb_hamiltonian.items():
+        tb_hamiltonian[key] = val.subs(sympy.Symbol('a'), lattice_constant)
+
     tb = make_kwant_functions(tb_hamiltonian, discrete_coordinates, verbose)
-    return tb.pop((0,)*len(discrete_coordinates)), tb
+
+    dim = len(discrete_coordinates)
+    lat = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
+    
+    return lat, tb.pop((0,)*len(discrete_coordinates)), tb
 
 
 # **************** Operation on sympy expressions **************************
