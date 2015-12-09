@@ -23,83 +23,67 @@ This will be notebook showing how our stuff works
 >>> kx, ky, kz = momentum_operators
 ...
 >>> A, B, C = sympy.symbols('A B C', commutative=False)
->>> H = sympy.Matrix([[kx*A*kx, ky*B*kx], [kx*B*ky, C]]); H
-⎡kₓ⋅A⋅kₓ   k_y⋅B⋅kₓ⎤
-⎢                  ⎥
-⎣kₓ⋅B⋅k_y     C    ⎦
+>>> H = sympy.Matrix([[kx*A*kx, kx*B], [B*kx, C]]); H
+⎡kₓ⋅A⋅kₓ  kₓ⋅B⎤
+⎢             ⎥
+⎣ B⋅kₓ     C  ⎦
 ```
 
 ```python
 >>> space_dependent = {'A', 'B'}
->>> discrete_coordinates = {'x', 'y'}
->>> all_hoppings=False
+>>> discrete_coordinates = {'x'}
+...
+>>> ons, hops = tb_hamiltonian(H, space_dependent, discrete_coordinates, verbose=True,
+...                            symbolic_output=True, all_hoppings=True, interpolate=False)
+Discrete coordinates set to:  ['x']
 ```
 
 ```python
->>> dh = tb_hamiltonian(H, space_dependent, discrete_coordinates, verbose=True, symbolic_output=True,
-...       all_hoppings=all_hoppings, interpolate=True)
->>> dh
-Discrete coordinates set to:  ['x', 'y']
-⎛⎡A(x, y)   A(-a + x, y)   A(a + x, y)   ⎤  ⎧         ⎡              B(a + x, 
-⎜⎢─────── + ──────────── + ───────────  0⎥, ⎪(1, -1): ⎢     0        ─────────
-⎜⎢    2            2              2      ⎥  ⎪         ⎢                     2 
-⎜⎢   a          2⋅a            2⋅a       ⎥  ⎪         ⎢                  4⋅a  
-⎜⎢                                       ⎥  ⎨         ⎢                       
-⎜⎣                 0                    C⎦  ⎪         ⎢B(x, -a + y)           
-⎜                                           ⎪         ⎢────────────       0   
-⎜                                           ⎪         ⎢       2               
-⎝                                           ⎩         ⎣    4⋅a                
+>>> ons
+⎡ ⎛  a    ⎞    ⎛a    ⎞   ⎤
+⎢A⎜- ─ + x⎟   A⎜─ + x⎟   ⎥
+⎢ ⎝  2    ⎠    ⎝2    ⎠   ⎥
+⎢────────── + ────────  0⎥
+⎢     2           2      ⎥
+⎢    a           a       ⎥
+⎢                        ⎥
+⎣          0            C⎦
+```
 
-y)⎤          ⎡  A(x, y)   A(a + x, y)   ⎤          ⎡               -B(a + x, y
-──⎥, (1, 0): ⎢- ─────── - ───────────  0⎥, (1, 1): ⎢      0        ───────────
-  ⎥          ⎢       2           2      ⎥          ⎢                       2  
-  ⎥          ⎢    2⋅a         2⋅a       ⎥          ⎢                    4⋅a   
-  ⎥          ⎢                          ⎥          ⎢                          
-  ⎥          ⎣           0             0⎦          ⎢-B(x, a + y)              
-  ⎥                                                ⎢─────────────        0    
-  ⎥                                                ⎢        2                 
-  ⎦                                                ⎣     4⋅a                  
-
-) ⎤⎫⎞
-──⎥⎪⎟
-  ⎥⎪⎟
-  ⎥⎪⎟
-  ⎥⎬⎟
-  ⎥⎪⎟
-  ⎥⎪⎟
-  ⎥⎪⎟
-  ⎦⎭⎠
+```python
+>>> hops
+⎧       ⎡  ⎛  a    ⎞            ⎤        ⎡  ⎛a    ⎞         ⎤⎫
+⎪       ⎢-A⎜- ─ + x⎟            ⎥        ⎢-A⎜─ + x⎟         ⎥⎪
+⎪       ⎢  ⎝  2    ⎠    -ⅈ⋅B(x) ⎥        ⎢  ⎝2    ⎠   ⅈ⋅B(x)⎥⎪
+⎪(-1,): ⎢────────────   ────────⎥, (1,): ⎢──────────  ──────⎥⎪
+⎪       ⎢      2          2⋅a   ⎥        ⎢     2       2⋅a  ⎥⎪
+⎨       ⎢     a                 ⎥        ⎢    a             ⎥⎬
+⎪       ⎢                       ⎥        ⎢                  ⎥⎪
+⎪       ⎢-ⅈ⋅B(-a + x)           ⎥        ⎢ⅈ⋅B(a + x)        ⎥⎪
+⎪       ⎢─────────────     0    ⎥        ⎢──────────    0   ⎥⎪
+⎪       ⎣     2⋅a               ⎦        ⎣   2⋅a            ⎦⎪
+⎩                                                            ⎭
 ```
 
 ```python
 >>> onsite, hoppings = tb_hamiltonian(H, space_dependent, discrete_coordinates, verbose=True)
-Discrete coordinates set to:  ['x', 'y']
+Discrete coordinates set to:  ['x']
 
-Function generated for (1, 0):
-def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
-    a = p.a
-    A = p.A
-    return (np.array([[-A(a/2 + x, y)/a**2, 0], [0, 0]]))
-
-Function generated for (0, 0):
+Function generated for (0,):
 def _anonymous_func(site, p):
-    y, x = site.pos
+    x = site.pos
     C, a = p.C, p.a
     A = p.A
-    return (np.array([[A(-a/2 + x, y)/a**2 + A(a/2 + x, y)/a**2, 0], [0, C]]))
+    return (np.array([[A(-a/2 + x)/a**2 + A(a/2 + x)/a**2, 0], [0, C]]))
 
-Function generated for (1, -1):
+Function generated for (1,):
 def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
+    x = site2.pos
     a = p.a
-    B = p.B
-    return (np.array([[0, B(a + x, y)/(4*a**2)], [B(x, -a + y)/(4*a**2), 0]]))
+    B, A = p.B, p.A
+    return (np.array([[-A(a/2 + x)/a**2, 1.j*B(x)/(2*a)], [1.j*B(a + x)/(2*a), 0]]))
+```
 
-Function generated for (1, 1):
-def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
-    a = p.a
-    B = p.B
-    return (np.array([[0, -B(a + x, y)/(4*a**2)], [-B(x, a + y)/(4*a**2), 0]]))
+```python
+
 ```
