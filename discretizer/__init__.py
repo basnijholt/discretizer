@@ -2,6 +2,7 @@ __all__ = ['algorithms']
 
 
 from .algorithms import tb_hamiltonian
+from.discretizer import Discretizer
 import sympy
 
 __version__ = '0.0.0'

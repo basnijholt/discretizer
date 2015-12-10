@@ -121,7 +121,8 @@ def assign_symbols(func_symbols, const_symbols, discrete_coordinates,
     else:
         site = 'site2'
 
-    lines.insert(0, '{} = {}.pos'.format(', '.join(discrete_coordinates), site))
+    names = sorted(list(discrete_coordinates))
+    lines.insert(0, '{} = {}.pos'.format(', '.join(names), site))
 
     return lines
 
