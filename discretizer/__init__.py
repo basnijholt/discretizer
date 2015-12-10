@@ -1,7 +1,7 @@
 __all__ = ['algorithms']
 
 
-from .algorithms import discretize
+from .algorithms import tb_hamiltonian
 import sympy
 
 __version__ = '0.0.0'

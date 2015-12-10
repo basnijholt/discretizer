@@ -2,97 +2,104 @@
 
 This will be notebook showing how our stuff works
 
-## Imports
+## Imports general
 
 ```python
 >>> import sympy
 >>> from sympy.interactive import printing
 >>> printing.init_printing(use_latex='mathjax')
-...
->>> import discretizer
->>> from discretizer import discretize
 ```
 
-```python
->>> from discretizer.algorithms import substitute_functions
->>> from discretizer.postprocessing import make_kwant_functions
-```
+## Imports discretizer
 
 ```python
->>> from discretizer.algorithms import magic
+>>> from discretizer import tb_hamiltonian
+>>> from discretizer import momentum_operators
 ```
 
 ## Defining sample expression
 
 ```python
->>> kx, ky, kz = discretizer.momentum_operators
->>> x, y, z = discretizer.coordinates
+>>> kx, ky, kz = momentum_operators
 ...
 >>> A, B, C = sympy.symbols('A B C', commutative=False)
->>> # H = sympy.Matrix([[kx*A*kx, B*kx], [kx*B, ky*C*ky+kx*sympy.sin(x)]])
-... H = kx*A*kx + kx*B + C
+>>> H = sympy.Matrix([[kx*A*kx +ky*A*ky, kx*B.conjugate()], [B*kx, C]]); H
+⎡                        _⎤
+⎢kₓ⋅A⋅kₓ + k_y⋅A⋅k_y  kₓ⋅B⎥
+⎢                         ⎥
+⎣       B⋅kₓ           C  ⎦
 ```
 
 ```python
->>> H
-C + kₓ⋅A⋅kₓ + kₓ⋅B
+>>> space_dependent = {'A', 'B'}
+>>> discrete_coordinates = {'x', 'y'}
+...
+>>> lat, ons, hops = tb_hamiltonian(H, space_dependent, discrete_coordinates, verbose=True,
+...                                 symbolic_output=True, return_conjugated_hops=True,
+...                                 interpolate=True)
+>>> ons, hops
+Discrete coordinates set to:  ['x', 'y']
+⎛                                                                          ⎧  
+⎜⎡2⋅A(x, y)   A(x, -a + y)   A(x, a + y)   A(-a + x, y)   A(a + x, y)   ⎤  ⎪  
+⎜⎢───────── + ──────────── + ─────────── + ──────────── + ───────────  0⎥, ⎪(-
+⎜⎢     2             2              2             2              2      ⎥  ⎪  
+⎜⎢    a           2⋅a            2⋅a           2⋅a            2⋅a       ⎥  ⎨  
+⎜⎢                                                                      ⎥  ⎪  
+⎜⎣                                 0                                   C⎦  ⎪  
+⎜                                                                          ⎪  
+⎝                                                                          ⎩  
+
+       ⎡                             _______ ⎤                                
+       ⎢  A(x, y)   A(-a + x, y)  -ⅈ⋅B(x, y) ⎥           ⎡  A(x, y)   A(x, -a 
+1, 0): ⎢- ─────── - ────────────  ───────────⎥, (0, -1): ⎢- ─────── - ────────
+       ⎢       2           2          2⋅a    ⎥           ⎢       2           2
+       ⎢    2⋅a         2⋅a                  ⎥           ⎢    2⋅a         2⋅a 
+       ⎢                                     ⎥           ⎢                    
+       ⎢    -ⅈ⋅B(-a + x, y)                  ⎥           ⎣           0        
+       ⎢    ────────────────           0     ⎥                                
+       ⎣          2⋅a                        ⎦                                
+
+                                                        ⎡                     
++ y)   ⎤          ⎡  A(x, y)   A(x, a + y)   ⎤          ⎢  A(x, y)   A(a + x, 
+────  0⎥, (0, 1): ⎢- ─────── - ───────────  0⎥, (1, 0): ⎢- ─────── - ─────────
+       ⎥          ⎢       2           2      ⎥          ⎢       2           2 
+       ⎥          ⎢    2⋅a         2⋅a       ⎥          ⎢    2⋅a         2⋅a  
+       ⎥          ⎢                          ⎥          ⎢                     
+      0⎦          ⎣           0             0⎦          ⎢     ⅈ⋅B(a + x, y)   
+                                                        ⎢     ─────────────   
+                                                        ⎣          2⋅a        
+
+      _______⎤⎫⎞
+y)  ⅈ⋅B(x, y)⎥⎪⎟
+──  ─────────⎥⎪⎟
+       2⋅a   ⎥⎪⎟
+             ⎥⎬⎟
+             ⎥⎪⎟
+             ⎥⎪⎟
+        0    ⎥⎪⎟
+             ⎦⎭⎠
 ```
 
 ```python
->>> hamiltonian = H
->>> space_dependent = {'A', 'B', 'C'}
->>> discrete_coordinates = {'x'}
-```
+>>> lat, ons, hops = tb_hamiltonian(H, space_dependent, discrete_coordinates, verbose=True, lattice_constant=0.5)
+Discrete coordinates set to:  ['x', 'y']
 
-```python
->>> magic(hamiltonian, space_dependent, discrete_coordinates, verbose=True, symbolic_output=True)
-Discrete coordinates set to:  ['x']
-⎧                      ⎛  a    ⎞                ⎛  a    ⎞    ⎛a    ⎞          
-⎪                     A⎜- ─ + x⎟               A⎜- ─ + x⎟   A⎜─ + x⎟          
-⎪       ⅈ⋅B(-a + x)    ⎝  2    ⎠                ⎝  2    ⎠    ⎝2    ⎠          
-⎨(-1,): ─────────── - ──────────, (0,): C(x) + ────────── + ────────, (1,): - 
-⎪           2⋅a            2                        2           2             
-⎪                         a                        a           a              
-⎩                                                                             
+Function generated for (0, 1):
+def _anonymous_func(site1, site2, p):
+    x, y = site2.pos
+    A = p.A
+    return (np.array([[-4.0*A(x, 0.25 + y), 0], [0, 0]]))
 
-              ⎛a    ⎞⎫
-             A⎜─ + x⎟⎪
-ⅈ⋅B(a + x)    ⎝2    ⎠⎪
-────────── - ────────⎬
-   2⋅a           2   ⎪
-                a    ⎪
-                     ⎭
-```
+Function generated for (1, 0):
+def _anonymous_func(site1, site2, p):
+    x, y = site2.pos
+    B, A = p.B, p.A
+    return (np.array([[-4.0*A(0.25 + x, y), 1.0*1.j*conjugate(B(x, y))], [1.0*1.j*B(0.5 + x, y), 0]]))
 
-```python
->>> magic(hamiltonian, space_dependent, discrete_coordinates, verbose=True, symbolic_output=False)
-Discrete coordinates set to:  ['x']
-
-Function generated for (0,):
+Function generated for (0, 0):
 def _anonymous_func(site, p):
-    x = site.pos
-    a = p.a
-    C, A = p.C, p.A
-    return (C(x) + A(-a/2 + x)/a**2 + A(a/2 + x)/a**2)
-
-Function generated for (-1,):
-def _anonymous_func(site1, site2, p):
-    x = site2.pos
-    a = p.a
-    B, A = p.B, p.A
-    return (1.j*B(-a + x)/(2*a) - A(-a/2 + x)/a**2)
-
-Function generated for (1,):
-def _anonymous_func(site1, site2, p):
-    x = site2.pos
-    a = p.a
-    B, A = p.B, p.A
-    return (-1.j*B(a + x)/(2*a) - A(a/2 + x)/a**2)
-{(-1,): <function _anonymous_func>,
- (0,): <function _anonymous_func>,
- (1,): <function _anonymous_func>}
-```
-
-```python
-
+    x, y = site.pos
+    C = p.C
+    A = p.A
+    return (np.array([[4.0*A(x, -0.25 + y) + 4.0*A(x, 0.25 + y) + 4.0*A(-0.25 + x, y) + 4.0*A(0.25 + x, y), 0], [0, C]]))
 ```

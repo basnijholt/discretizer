@@ -35,7 +35,8 @@ def offset_to_direction(discrete_hamiltonian, discrete_coordinates):
     coordinates = [sympy.Symbol(s, commutative=False) for s in coordinates]
     a = sympy.Symbol('a')
 
-    output = {}
+    onsite_zeros = (0,)*len(discrete_coordinates)
+    output = {onsite_zeros: discrete_hamiltonian.pop(onsite_zeros)}
     for offset, hopping in discrete_hamiltonian.items():
         direction = tuple(-c for c in offset)
         subs = {c: c + d*a for c, d in zip(coordinates, direction)}

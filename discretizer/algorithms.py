@@ -8,16 +8,22 @@ from .postprocessing import offset_to_direction
 
 from .interpolation import interpolate_tb_hamiltonian
 
+try:
+    # normal situation
+    from kwant.lattice import Monatomic
+except ImportError:
+    # probably run on gitlab-ci
+    pass
 
 # ************************** Some globals *********************************
 wavefunction_name = 'Psi'
 
 
 # ************************* Main interface functions ***********************
-def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
-          symbolic_output=False, all_hoppings=False, interpolate=False,
-          verbose=False):
-    """Get tight binding representation of a Hamiltonian that can be passed to kwant.
+def tb_hamiltonian(hamiltonian, space_dependent=None, discrete_coordinates=None,
+                   lattice_constant=1, interpolate=False, symbolic_output=False,
+                   return_conjugated_hops=False, verbose=False):
+    """Get tight binding representation of a Hamiltonian that can be passed to Kwant.
 
     Parameters:
     -----------
@@ -34,7 +40,7 @@ def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
         example ``discrete_coordinates={'x', 'y'}``.
     symbolic_output : bool
         If True a symbolic hoppings and onsite will be returned. Default is False.
-    all_hoppings : bool
+    return_conjugated_hops : bool
         If True all hoppings will be returned. For example, if set to True, both
         hoppings into (1, 0) and (-1, 0) will be returned. Default is False.
     interpolate : bool
@@ -46,40 +52,73 @@ def make_tb_system(hamiltonian, space_dependent=None, discrete_coordinates=None,
 
     Returns:
     --------
+    lattice : kwant.lattice.Monatomic instance
+        Lattice to create kwant system. Lattice constant is set to
+        lattice_constant value.
     onsite : function
         The value of the onsite Hamiltonian.
     hoppings : dict
         A dictionary with keys being tuples of the lattice hopping, and values
         the corresponding value functions.
     """
-    tmp = substitute_functions(hamiltonian, discrete_coordinates, space_dependent)
+    # preprocessing
+    tmp = substitute_functions(hamiltonian, space_dependent, discrete_coordinates)
     hamiltonian, discrete_coordinates = tmp
+
+    dim = len(discrete_coordinates)
+    lat = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
 
     if verbose:
         print('Discrete coordinates set to: ', sorted(discrete_coordinates))
         print()
 
+    # discretization
     tb_hamiltonian = discretize(hamiltonian, discrete_coordinates)
     tb_hamiltonian = offset_to_direction(tb_hamiltonian, discrete_coordinates)
+
     if interpolate:
         tb_hamiltonian = interpolate_tb_hamiltonian(tb_hamiltonian)
 
-    if not all_hoppings:
+    if not return_conjugated_hops:
         keys = list(tb_hamiltonian)
         new_keys = sorted(keys)[len(keys)//2:]
         tb_hamiltonian = {k: v for k, v in tb_hamiltonian.items() if k in new_keys}
 
     if symbolic_output:
-        return tb_hamiltonian.pop((0,)*len(discrete_coordinates)), tb_hamiltonian
+        ons = tb_hamiltonian.pop((0,)*len(discrete_coordinates))
+        return lat, ons, tb_hamiltonian
 
+    for key, val in tb_hamiltonian.items():
+        tb_hamiltonian[key] = val.subs(sympy.Symbol('a'), lattice_constant)
+
+    # making kwant functions
     tb = make_kwant_functions(tb_hamiltonian, discrete_coordinates, verbose)
-    return tb.pop((0,)*len(discrete_coordinates)), tb
+    return lat, tb.pop((0,)*len(discrete_coordinates)), tb
 
 
 # **************** Operation on sympy expressions **************************
-def substitute_functions(expression, discrete_coordinates=None,
-                         space_dependent=None):
-    """Substitute `AppliedUndef` functions into expression."""
+def substitute_functions(expression, space_dependent=None,
+                         discrete_coordinates=None):
+    """Substitute `AppliedUndef` functions into expression.
+
+    Parameters:
+    -----------
+    expression : sympy.Expr or sympy.Matrix instance
+    space_dependent : set of strings
+        Every symbol which name appears here will be substituted with a function
+        of discrete coordinates.
+    discrete_coordinates : set of strings
+        Set of coordinates that are treat as discrete. If left as a None they
+        will be obtained from the input expression by reading present
+        coordinates and momentum operators.
+
+    Returns:
+    --------
+    expression : sympy.Expr or sympy.Matrix instance
+        Input expression with all symbols representing space dependendent
+        parameters substituted with functions of coordinates and all
+        symbols representing constants substituted with commutative symbols.
+    """
 
     if not isinstance(discrete_coordinates, (type(None), set)):
         raise TypeError("discrete_coordinates should be of type None or set")
@@ -210,16 +249,6 @@ def derivate(expression, operator):
     --------
     output : sympy.Expr instance
         Derivated input expression.
-
-    Examples:
-    ---------
-    >>> from discretizer.algorithms import derivate
-    >>> import sympy
-    >>> A = sympy.Function('A')
-    >>> x = sympy.Symbol('x')
-    >>> kx = sympy.Symbol('k_x')
-    >>> derivate(A(x), kx)
-    -I*(-A(-a_x + x)/(2*a_x) + A(a_x + x)/(2*a_x))
     """
     if not isinstance(operator, sympy.Symbol):
         raise TypeError("Input operator '{}' is not type sympy.Symbol.")
@@ -324,7 +353,7 @@ def discretize(hamiltonian, discrete_coordinates):
 
     Parameters:
     -----------
-    hamiltonian : sympy.Expr instance
+    hamiltonian : sympy.Expr or sympy.Matrix instance
         The expression for the Hamiltonian.
 
     Returns:
