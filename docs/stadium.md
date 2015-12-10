@@ -28,38 +28,14 @@
 ...
 >>> H = kx**2 + ky**2 - V
 >>> H
-       2      2
--V + kₓ  + k_y
 ```
 
 ```python
 >>> tb = Discretizer(H, space_dependent={'V'}, verbose=True)
-Discrete coordinates set to:  ['x', 'y']
-
-Function generated for (0, 1):
-def _anonymous_func(site1, site2, p):
-    x, y = site2.pos
-    return (-1)
-
-Function generated for (1, 0):
-def _anonymous_func(site1, site2, p):
-    x, y = site2.pos
-    return (-1)
-
-Function generated for (0, 0):
-def _anonymous_func(site, p):
-    x, y = site.pos
-    V = p.V
-    return (4 - V(x, y))
 ```
 
 ```python
 >>> tb.symbolic_hamiltonian
-⎧                   4           -1           -1 ⎫
-⎪(0, 0): -V(x, y) + ──, (0, 1): ───, (1, 0): ───⎪
-⎨                    2            2            2⎬
-⎪                   a            a            a ⎪
-⎩                                               ⎭
 ```
 
 ```python
