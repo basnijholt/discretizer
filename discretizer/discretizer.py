@@ -13,8 +13,9 @@ from .interpolation import interpolate_tb_hamiltonian
 try:
     # normal situation
     from kwant import Builder
-    from kwant.lattice import Monatomic
+    from kwant import TranslationalSymmetry
     from kwant import HoppingKind
+    from kwant.lattice import Monatomic
 except ImportError:
     # probably run on gitlab-ci
     pass
@@ -85,3 +86,33 @@ class Discretizer(object):
         tb = make_kwant_functions(tb_hamiltonian, discr_coord, verbose)
         self.onsite = tb.pop((0,)*len(discr_coord))
         self.hoppings = {HoppingKind(d, self.lat): val for d, val in tb.items()}
+
+    def build(self, shape, start, symmetry=None):
+        """Build Kwant's system.
+
+        Convienient functions that simplifies building of a Kwant's system.
+
+        Parameters:
+        -----------
+        shape : function
+            A function of real space coordinates that returns a truth value:
+            true for coordinates inside the shape, and false otherwise.
+        start : 1d array-like
+            The real-space origin for the flood-fill algorithm.
+        symmetry : 1d array-like
+            If symmetry is provided a translational invariant system will be
+            built. Here symmetry should stand for a lattice vector in which
+            system is translational invariant. This vector will be scalled by
+            a lattice_constant passed before to ``kwant.TranslationalSymmetry``.
+        """
+        if symmetry is None:
+            sys = Builder()
+        else:
+            vec = self.lattice_constant * np.array(symmetry)
+            sys = Builder(TranslationalSymmetry(vec))
+
+        sys[self.lat.shape(shape, start)] = self.onsite
+        for hop, val in self.hoppings.items():
+            sys[hop] = val
+
+        return sys
