@@ -43,7 +43,9 @@
 ...     (x, y) = position
 ...     x = max(abs(x) - 20, 0)
 ...     return x**2 + y**2 < 30**2
-...
+```
+
+```python
 >>> sys = kwant.Builder()
 >>> sys[tb.lat.shape(stadium, (0, 0))] = tb.onsite
 ...
@@ -54,9 +56,24 @@
 ...
 >>> kwant.plot(sys)
 >>> plt.show()
+...
+>>> par = SimpleNamespace(V=lambda x,y: 5e-6*(x**2 + y**2))
+>>> ham = sys.hamiltonian_submatrix(args=[par], sparse=True)
+>>> ev, vec = sla.eigsh(ham, k=10, which='SA')
+...
+>>> kwant.plotter.map(sys, abs(vec[:,0])**2)
+>>> plt.show()
 ```
 
 ```python
+>>> del sys
+...
+>>> sys = tb.build(stadium, (0,0))
+>>> sys = sys.finalized()
+...
+>>> kwant.plot(sys)
+>>> plt.show()
+...
 >>> par = SimpleNamespace(V=lambda x,y: 5e-6*(x**2 + y**2))
 >>> ham = sys.hamiltonian_submatrix(args=[par], sparse=True)
 >>> ev, vec = sla.eigsh(ham, k=10, which='SA')
