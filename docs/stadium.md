@@ -1,28 +1,25 @@
 ```python
->>> import os
 >>> import sys
-...
->>> cwd = os.getcwd().split('/')
->>> sys.path.append(os.path.join('/', *cwd[:cwd.index('discretizer')+1]))
+>>> import os
+>>> path_to_discretizer = '~/discretizer'
+>>> sys.path.append(os.path.expanduser(path_to_discretizer))
 ```
 
 ```python
->>> from scipy.sparse.linalg import eigsh
+>>> import scipy.sparse.linalg as sla
 >>> import sympy
 >>> from sympy.interactive import printing
 >>> printing.init_printing(use_latex='mathjax')
 ```
 
 ```python
->>> from discretizer import tb_hamiltonian
+>>> from discretizer import Discretizer
 >>> from discretizer import momentum_operators
 >>> from types import SimpleNamespace
 ...
 >>> import kwant
 >>> import matplotlib.pyplot as plt
 >>> %matplotlib inline
-/home/rskolasinski/environments/dev3/lib/python3.4/site-packages/kwant/solvers/default.py:18: RuntimeWarning: MUMPS is not available, SciPy built-in solver will be used as a fallback. Performance can be very poor in this case.
-  "Performance can be very poor in this case.", RuntimeWarning)
 ```
 
 ```python
@@ -36,25 +33,33 @@
 ```
 
 ```python
->>> lat, ons, hops = tb_hamiltonian(H, space_dependent={'V'},
-...                                 verbose=True)
+>>> tb = Discretizer(H, space_dependent={'V'}, verbose=True)
 Discrete coordinates set to:  ['x', 'y']
 
 Function generated for (0, 1):
 def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
+    x, y = site2.pos
     return (-1)
 
 Function generated for (1, 0):
 def _anonymous_func(site1, site2, p):
-    y, x = site2.pos
+    x, y = site2.pos
     return (-1)
 
 Function generated for (0, 0):
 def _anonymous_func(site, p):
-    y, x = site.pos
+    x, y = site.pos
     V = p.V
     return (4 - V(x, y))
+```
+
+```python
+>>> tb.symbolic_hamiltonian
+⎧                   4           -1           -1 ⎫
+⎪(0, 0): -V(x, y) + ──, (0, 1): ───, (1, 0): ───⎪
+⎨                    2            2            2⎬
+⎪                   a            a            a ⎪
+⎩                                               ⎭
 ```
 
 ```python
@@ -64,10 +69,10 @@ def _anonymous_func(site, p):
 ...     return x**2 + y**2 < 30**2
 ...
 >>> sys = kwant.Builder()
->>> sys[lat.shape(stadium, (0, 0))] = ons
+>>> sys[tb.lat.shape(stadium, (0, 0))] = tb.onsite
 ...
->>> for hop, value in hops.items():
-...     sys[kwant.builder.HoppingKind(hop, lat)] = value
+>>> for hop, val in tb.hoppings.items():
+...     sys[hop] = val
 ...
 >>> sys = sys.finalized()
 ...
@@ -78,16 +83,8 @@ def _anonymous_func(site, p):
 ```python
 >>> par = SimpleNamespace(V=lambda x,y: 5e-6*(x**2 + y**2))
 >>> ham = sys.hamiltonian_submatrix(args=[par], sparse=True)
->>> ev, vec = eigsh(ham, k=10, which='SA')
+>>> ev, vec = sla.eigsh(ham, k=10, which='SA')
 ...
 >>> kwant.plotter.map(sys, abs(vec[:,0])**2)
 >>> plt.show()
-```
-
-```python
-
-```
-
-```python
-
 ```
