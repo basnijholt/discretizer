@@ -36,6 +36,8 @@ class Discretizer(object):
     discrete_coordinates : set of strings
         Set of coordinates for which momentum operators will be treated as
         differential operators. For example ``discrete_coordinates={'x', 'y'}``.
+        If left as a None they will be obtained from the input hamiltonian by
+        reading present coordinates and momentum operators.
     interpolate : bool
         If True all space dependent parameters in onsite and hopping will be
         interpolated to depenend only on the values at site positions.
@@ -45,6 +47,22 @@ class Discretizer(object):
         hoppings into (1, 0) and (-1, 0) will be returned. Default is False.
     verbose : bool
         If True additional information will be printed. Default is False.
+
+    Attributes:
+    -----------
+    symbolic_hamiltonian : dictionary
+        Dictionary containing symbolic result of discretization. Key is the
+        direction of the hopping (zeros for onsite)
+    lattice : kwant.lattice.Monatomic instance
+        Lattice to create kwant system. Lattice constant is set to
+        lattice_constant value.
+    onsite : function
+        The value of the onsite Hamiltonian.
+    hoppings : dict
+        A dictionary with keys being tuples of the lattice hopping, and values
+        the corresponding value functions.
+    discrete_coordinates : set of strings
+        As in input.
     """
     def __init__(self, hamiltonian, space_dependent=None,
                  discrete_coordinates=None, lattice_constant=1,
@@ -56,13 +74,14 @@ class Discretizer(object):
                                                      space_dependent,
                                                      discrete_coordinates)
 
+        self.discrete_coordinates = discr_coord
         if verbose:
             print('Discrete coordinates set to: ', sorted(discr_coord))
             print()
 
         # making kwant lattice
         dim = len(discr_coord)
-        self.lat = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
+        self.lattice = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
         self.lattice_constant = lattice_constant
 
         # discretization
@@ -85,7 +104,8 @@ class Discretizer(object):
         # making kwant functions
         tb = make_kwant_functions(tb_hamiltonian, discr_coord, verbose)
         self.onsite = tb.pop((0,)*len(discr_coord))
-        self.hoppings = {HoppingKind(d, self.lat): val for d, val in tb.items()}
+        self.hoppings = {HoppingKind(d, self.lattice): val
+                         for d, val in tb.items()}
 
     def build(self, shape, start, symmetry=None):
         """Build Kwant's system.
@@ -104,6 +124,10 @@ class Discretizer(object):
             built. Here symmetry should stand for a lattice vector in which
             system is translational invariant. This vector will be scalled by
             a lattice_constant passed before to ``kwant.TranslationalSymmetry``.
+
+        Returns:
+        --------
+        system : kwant.Builder instance
         """
         if symmetry is None:
             sys = Builder()
@@ -111,7 +135,7 @@ class Discretizer(object):
             vec = self.lattice_constant * np.array(symmetry)
             sys = Builder(TranslationalSymmetry(vec))
 
-        sys[self.lat.shape(shape, start)] = self.onsite
+        sys[self.lattice.shape(shape, start)] = self.onsite
         for hop, val in self.hoppings.items():
             sys[hop] = val
 

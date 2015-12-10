@@ -47,7 +47,7 @@
 
 ```python
 >>> sys = kwant.Builder()
->>> sys[tb.lat.shape(stadium, (0, 0))] = tb.onsite
+>>> sys[tb.lattice.shape(stadium, (0, 0))] = tb.onsite
 ...
 >>> for hop, val in tb.hoppings.items():
 ...     sys[hop] = val
