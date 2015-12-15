@@ -30,42 +30,18 @@ We write the kinetic energy in terms of the imported momentum operators. In addi
 ...
 >>> H = kx**2 + ky**2 - V
 >>> H
-       2      2
--V + kₓ  + k_y
 ```
 
 We pass the symbolic Hamiltonian over to the Discretizer and declare that $V$ is space dependend. We do that with the full output. Take a look at the onsite and hopping functions the discretizer created!
 
 ```python
 >>> tb = Discretizer(H, space_dependent={'V'}, verbose=True)
-Discrete coordinates set to:  ['x', 'y']
-
-Function generated for (0, 1):
-def _anonymous_func(site1, site2, p):
-    x, y = site2.pos
-    return (-1)
-
-Function generated for (1, 0):
-def _anonymous_func(site1, site2, p):
-    x, y = site2.pos
-    return (-1)
-
-Function generated for (0, 0):
-def _anonymous_func(site, p):
-    x, y = site.pos
-    V = p.V
-    return (4 - V(x, y))
 ```
 
 The discretizer can also give these functions in symbolic form, if you want to check them. Then it returns a dictionary where the key is the hopping kind and the entry is the symbolic function. The key of the onsite function is filled with zeroes, so in this case it is $(0, 0)$.
 
 ```python
 >>> tb.symbolic_hamiltonian
-⎧                   4           -1           -1 ⎫
-⎪(0, 0): -V(x, y) + ──, (0, 1): ───, (1, 0): ───⎪
-⎨                    2            2            2⎬
-⎪                   a            a            a ⎪
-⎩                                               ⎭
 ```
 
 So now we show that we can actually make a kwant system with that output. That is why we define a shape of the system. We decide to make it a stadium:
