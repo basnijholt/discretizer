@@ -9,7 +9,8 @@ Most important, and non-trivial to implement, is support for mix of differential
 
 # Relases info
 ## v0.1.1
-    * fix discretization of non-square matrices
+    * fix discretization of non-square matrices (issue #18)
+    * fix of accessing coordinates in 1D lattices (issue #19)
 
 ## v0.1.0
     * freeze of interface provided by discretizer.Discretizer
