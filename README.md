@@ -7,11 +7,18 @@ Input is supposed to be a valid sympy expression representing hermitian Hamilton
 Most important, and non-trivial to implement, is support for mix of differential operators and space dependent parameters, like ``H = kx * A(x) * kx``
 
 
+# Relases info
+## v0.1.1
+    * fix discretization of non-square matrices
+
+## v0.1.0
+    * freeze of interface provided by discretizer.Discretizer
+
+
 #To do
-* finish interface (high priority)
+* finish interface (waiting for aproval)
 * write more tests
 * include initial hermicity check
-* include midpoints interpolation option
 
 
 # To decide
@@ -29,7 +36,7 @@ If you use your own laptop please do:
 ```
 pip install git+https://github.com/rossant/ipymd
 ```
-and add to ~/.jupyter/jupyter
+and add to ~/.jupyter/jupyter_notebook_config.py
 ```
 c.NotebookApp.contents_manager_class = 'ipymd.IPymdContentsManager'
 ```

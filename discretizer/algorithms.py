@@ -296,7 +296,7 @@ def discretize(hamiltonian, discrete_coordinates):
     shape = hamiltonian.shape
 
     discrete_hamiltonian = defaultdict(lambda: sympy.zeros(*shape))
-    for i,j in itertools.product(range(shape[0]), repeat=2):
+    for i,j in itertools.product(range(shape[0]), range(shape[1])):
         expression = hamiltonian[i, j]
         hoppings = _discretize_expression(expression, discrete_coordinates)
 
