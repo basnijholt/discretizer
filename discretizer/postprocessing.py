@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+
 import sympy
 from sympy.utilities.lambdify import lambdastr
 from sympy.printing.lambdarepr import LambdaPrinter
@@ -145,8 +147,7 @@ def value_function(content, name='_anonymous_func', onsite=True, verbose=False):
     Returns:
     --------
     f : function
-        The function defined in a namespace containing only the cached values
-        of Pauli matrices.
+        The function defined in a separated namespace.
     """
     if not content[-1].startswith('return'):
         raise ValueError('The function does not end with a return statement')
@@ -159,6 +160,7 @@ def value_function(content, name='_anonymous_func', onsite=True, verbose=False):
     namespace = {}
     if verbose:
         print(func_code)
+    exec("from __future__ import division", namespace)
     exec("import numpy as np", namespace)
     exec(func_code, namespace)
     return namespace[name]

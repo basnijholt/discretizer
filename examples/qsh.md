@@ -1,8 +1,9 @@
 ```python
 >>> import sys
 >>> import os
->>> path_to_discretizer = '~/discretizer'
->>> sys.path.append(os.path.expanduser(path_to_discretizer))
+...
+>>> discretizer_folder ='../'
+>>> sys.path.append(os.path.abspath(discretizer_folder))
 ```
 
 ```python
@@ -20,7 +21,11 @@
 ```python
 >>> from discretizer import Discretizer
 >>> from discretizer import momentum_operators
->>> from types import SimpleNamespace
+...
+>>> try:
+...     from types import SimpleNamespace
+>>> except: # Python 2
+...     from argparse import Namespace as SimpleNamespace
 ...
 >>> import kwant
 >>> import matplotlib.pyplot as plt
