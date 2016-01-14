@@ -117,6 +117,7 @@ def split_factors(expression, discrete_coordinates):
 
     momentum_names = ['k_{}'.format(s) for s in discrete_coordinates]
     momentum_operators = sympy.symbols(momentum_names, commutative=False)
+    momentum_operators += sympy.symbols(momentum_names, commutative=True)
 
     output = {'rhs': [1], 'operator': [1], 'lhs': [1]}
 
@@ -292,7 +293,7 @@ def discretize(hamiltonian, discrete_coordinates):
     Recursive derivation implemented in _discretize_summand is applied
     on every summand. Shortening is applied before return on output.
     """
-    if not isinstance(hamiltonian, sympy.Matrix):
+    if not isinstance(hamiltonian, sympy.matrices.MatrixBase):
         return _discretize_expression(hamiltonian, discrete_coordinates)
 
     shape = hamiltonian.shape

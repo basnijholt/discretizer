@@ -162,6 +162,7 @@ def value_function(content, name='_anonymous_func', onsite=True, verbose=False):
         print(func_code)
     exec("from __future__ import division", namespace)
     exec("import numpy as np", namespace)
+    exec("from numpy import *", namespace)
     exec(func_code, namespace)
     return namespace[name]
 

@@ -8,6 +8,12 @@ Most important, and non-trivial to implement, is support for mix of differential
 
 
 # Releases info
+## v0.1.3
+    * Input Hamiltonian can be now any sympy matrix (also ImmutableMatrix)
+    * Importing whole numpy into kwant function namespaces
+    * Discretizer works properly even when momentum operator is defined as
+      commutative
+
 ## v0.1.2
     * adding __future__ imports to provided Python 2 compatibility
 
