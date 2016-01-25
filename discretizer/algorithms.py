@@ -23,7 +23,7 @@ wavefunction_name = 'Psi'
 
 # **************** Operation on sympy expressions **************************
 def substitute_functions(expression, space_dependent=None,
-                         discrete_coordinates=None):
+                         discrete_coordinates=None, function_arguments=None):
     """Substitute `AppliedUndef` functions into expression.
 
     Parameters:
@@ -56,24 +56,28 @@ def substitute_functions(expression, space_dependent=None,
             discrete_coordinates = set()
         return expression, discrete_coordinates
 
-    if discrete_coordinates is None:
-        discrete_coordinates = set()
-        for s in expression.atoms(sympy.Symbol):
-            s = s.name
-            if s in ['x', 'y', 'z']:
-                discrete_coordinates.add(s)
-            if s in ['k_x', 'k_y', 'k_z']:
-                discrete_coordinates.add(s.split('_')[1])
-
     if space_dependent is None:
         space_dependent = set()
+
+    if discrete_coordinates is None:
+        discrete_coordinates = set()
+        for a in expression.atoms(sympy.Symbol):
+            if a.name in ['k_x', 'k_y', 'k_z']:
+                discrete_coordinates.add(a.name.split('_')[1])
+
+    if function_arguments is None:
+        function_arguments = discrete_coordinates
+
+    if not function_arguments.issubset(discrete_coordinates):
+        raise ValueError('function_arguments must be a subsset of discrete_coordinates')
 
     space_dependent = {s for s in expression.atoms(sympy.Symbol)
                        if s.name in space_dependent}
 
-    names = sorted(list(discrete_coordinates))
-    coordinates = [sympy.Symbol(s, commutative=False) for s in names]
-    momentum_names = ['k_{}'.format(s) for s in names]
+    arg_names = sorted(list(function_arguments))
+    coordinates = [sympy.Symbol(s, commutative=False) for s in arg_names]
+
+    momentum_names = {'k_{}'.format(s) for s in discrete_coordinates}
     momentum_operators = sympy.symbols(momentum_names, commutative=False)
 
     subs = {s: s(*coordinates) for s in space_dependent}
@@ -85,7 +89,6 @@ def substitute_functions(expression, space_dependent=None,
     expression = expression.subs(subs)
 
     return expression, discrete_coordinates
-
 
 def split_factors(expression, discrete_coordinates):
     """ Split symbolic `expression` for a discretization step.

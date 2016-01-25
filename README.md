@@ -8,6 +8,11 @@ Most important, and non-trivial to implement, is support for mix of differential
 
 
 # Releases info
+## v0.2
+    * Providing new input argument that allows to customize coordinates on
+      which spatial varying parameters depend.
+    * input_hamiltonian attribute now contains preprocessed Hamiltonian
+
 ## v0.1.3
     * Input Hamiltonian can be now any sympy matrix (also ImmutableMatrix)
     * Importing whole numpy into kwant function namespaces

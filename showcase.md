@@ -32,12 +32,18 @@ This notebooks shows general features of interface. For examples please see:
 ```python
 >>> space_dependent = {'A', 'B'}
 >>> discrete_coordinates = {'x', 'y'}
+>>> function_arguments = {'x'}
 ```
 
 # class interface
 
 ```python
->>> tb = Discretizer(H, space_dependent, discrete_coordinates, lattice_constant=2.0, verbose=True)
+>>> tb = Discretizer(H, space_dependent, discrete_coordinates, function_arguments,
+...                  lattice_constant=2.0, verbose=True)
+```
+
+```python
+>>> tb.input_hamiltonian
 ```
 
 ```python
