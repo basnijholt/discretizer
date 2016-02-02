@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+
 import sympy
 import discretizer
 from discretizer.algorithms import split_factors

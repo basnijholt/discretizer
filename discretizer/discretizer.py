@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+
 import numpy as np
 import sympy
 
@@ -38,6 +40,10 @@ class Discretizer(object):
         differential operators. For example ``discrete_coordinates={'x', 'y'}``.
         If left as a None they will be obtained from the input hamiltonian by
         reading present coordinates and momentum operators.
+    function_arguments : set of strings
+        Set of coordinates that are arguments for space_dependent functions.
+        By default they are equal to discrete_coordinates and must be a subsset
+        of those.
     interpolate : bool
         If True all space dependent parameters in onsite and hopping will be
         interpolated to depenend only on the values at site positions.
@@ -63,17 +69,20 @@ class Discretizer(object):
         the corresponding value functions.
     discrete_coordinates : set of strings
         As in input.
+    input_hamiltonian : sympy.Expr or sympy.Matrix instance
+        The input hamiltonian after preprocessing (substitution of functions).
     """
     def __init__(self, hamiltonian, space_dependent=None,
-                 discrete_coordinates=None, lattice_constant=1,
-                 interpolate=False, both_hoppings_direction=False,
-                 verbose=False):
+                 discrete_coordinates=None, function_arguments=None,
+                 lattice_constant=1, interpolate=False,
+                 both_hoppings_direction=False, verbose=False):
         # preprocessing
-        self.input_hamiltonian = hamiltonian
         ham_func, discr_coord = substitute_functions(hamiltonian,
                                                      space_dependent,
-                                                     discrete_coordinates)
+                                                     discrete_coordinates,
+                                                     function_arguments)
 
+        self.input_hamiltonian = ham_func
         self.discrete_coordinates = discr_coord
         if verbose:
             print('Discrete coordinates set to: ', sorted(discr_coord))
