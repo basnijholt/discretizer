@@ -62,3 +62,8 @@ In case it doesn't work ask Rafal. On hpc1 should work by default (dev2 tested)
 I decided to use notebooks only to provide examples that can be directly view
 with nbviewer. Therefore filters should be deactivated for now to not remove
 outputs.
+
+
+# License
+This code was written by Rafał Skolasiński and Sebastian Rubbert.  
+The license is the same as that of Kwant (2-clause BSD): http://kwant-project.org/license
