@@ -8,4 +8,5 @@ setup(name='discretizer',
     #   author_email='',
       license='BSD 2-clause',
       packages=['discretizer'],
+      install_requires=['sympy', 'numpy'],
       zip_safe=False)
