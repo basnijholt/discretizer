@@ -7,6 +7,14 @@ Input is supposed to be a valid sympy expression representing hermitian Hamilton
 Most important, and non-trivial to implement, is support for mix of differential operators and space dependent parameters, like ``H = kx * A(x) * kx``
 
 
+# Installation
+```
+git clone git@gitlab.kwant-project.org:r-j-skolasinski/discretizer.git
+cd discretizer
+pip install .
+```
+
+
 # Releases info
 ## v0.2
     * Providing new input argument that allows to customize coordinates on
