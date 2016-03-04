@@ -9,9 +9,7 @@ Most important, and non-trivial to implement, is support for mix of differential
 
 # Installation
 ```
-git clone git@gitlab.kwant-project.org:r-j-skolasinski/discretizer.git
-cd discretizer
-pip install .
+ pip install git+https://gitlab.kwant-project.org/r-j-skolasinski/discretizer.git
 ```
 
 
