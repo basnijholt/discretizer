@@ -132,7 +132,7 @@ class Discretizer(object):
             If symmetry is provided a translational invariant system will be
             built. Here symmetry should stand for a lattice vector in which
             system is translational invariant. This vector will be scalled by
-            a lattice_constant passed before to ``kwant.TranslationalSymmetry``.
+            a lattice_constant before passed to ``kwant.TranslationalSymmetry``.
 
         Returns:
         --------
