@@ -89,13 +89,18 @@ class Discretizer(object):
             print()
 
         # making kwant lattice
-        dim = len(discr_coord)
+        dim = len(discr_coord) if discr_coord else 3
+
         self.lattice = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
         self.lattice_constant = lattice_constant
 
         # discretization
-        tb_hamiltonian = discretize(ham_func, discr_coord)
-        tb_hamiltonian = offset_to_direction(tb_hamiltonian, discr_coord)
+        if discr_coord:
+            tb_hamiltonian = discretize(ham_func, discr_coord)
+            tb_hamiltonian = offset_to_direction(tb_hamiltonian, discr_coord)
+        else:
+            tb_hamiltonian = {(0,0,0): ham_func}
+            discr_coord = {'x', 'y', 'z'}
 
         if interpolate:
             tb_hamiltonian = interpolate_tb_hamiltonian(tb_hamiltonian)

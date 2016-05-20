@@ -19,6 +19,9 @@ conda install -c rskolasinski discretizer
 
 
 # Releases info
+## v0.2.1
+    * Removing bug that did not allow to provide ``discrete_coordinates=set()``
+
 ## v0.2
     * Providing new input argument that allows to customize coordinates on
       which spatial varying parameters depend.
