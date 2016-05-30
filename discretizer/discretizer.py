@@ -121,7 +121,7 @@ class Discretizer(object):
         self.hoppings = {HoppingKind(d, self.lattice): val
                          for d, val in tb.items()}
 
-    def build(self, shape, start, symmetry=None):
+    def build(self, shape, start, symmetry=None, periods=None):
         """Build Kwant's system.
 
         Convienient functions that simplifies building of a Kwant's system.
@@ -134,20 +134,31 @@ class Discretizer(object):
         start : 1d array-like
             The real-space origin for the flood-fill algorithm.
         symmetry : 1d array-like
-            If symmetry is provided a translational invariant system will be
-            built. Here symmetry should stand for a lattice vector in which
-            system is translational invariant. This vector will be scalled by
-            a lattice_constant before passed to ``kwant.TranslationalSymmetry``.
+            Deprecated. Please use ```periods=[symmetry]`` instead.
+        periods : list of tuples
+            If periods are provided a translational invariant system will be
+            built. Periods corresponds basically to a translational symmetry
+            defined in real space. This vector will be scalled by a lattice
+            constant before passing it to ``kwant.TranslationalSymmetry``.
+            Examples: ``periods=[(1,0,0)]`` or ``periods=[(1,0), (0,1)]``.
+            In second case one will need https://gitlab.kwant-project.org/cwg/wraparound
+            in order to finalize system.
 
         Returns:
         --------
         system : kwant.Builder instance
         """
-        if symmetry is None:
+        if symmetry is not None:
+            warnings.warn("\nSymmetry argument is deprecated. " +
+                          "Please use ```periods=[symmetry]`` instead.",
+                          DeprecationWarning)
+            periods = [symmetry]
+
+        if periods is None:
             sys = Builder()
         else:
-            vec = self.lattice_constant * np.array(symmetry)
-            sys = Builder(TranslationalSymmetry(vec))
+            vecs = [self.lattice.vec(p) for p in periods]
+            sys = Builder(TranslationalSymmetry(*vecs))
 
         sys[self.lattice.shape(shape, start)] = self.onsite
         for hop, val in self.hoppings.items():

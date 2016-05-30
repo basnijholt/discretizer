@@ -19,6 +19,10 @@ conda install -c rskolasinski discretizer
 
 
 # Releases info
+## v0.3
+    * Introducing ``periods`` argument of ``Discretizer.build`` method.
+    * ``Symmetry`` argument of ``Discretizer.build`` is deprecated from now on.
+
 ## v0.2.1
     * Removing bug that did not allow to provide ``discrete_coordinates=set()``
 
