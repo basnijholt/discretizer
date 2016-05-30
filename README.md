@@ -19,6 +19,9 @@ conda install -c rskolasinski discretizer
 
 
 # Releases info
+## v0.3.1
+    * Adding missing import of ``warnings``.
+
 ## v0.3
     * Introducing ``periods`` argument of ``Discretizer.build`` method.
     * ``Symmetry`` argument of ``Discretizer.build`` is deprecated from now on.
