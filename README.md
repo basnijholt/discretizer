@@ -6,6 +6,8 @@ Input is supposed to be a valid sympy expression representing hermitian Hamilton
 
 Most important, and non-trivial to implement, is support for mix of differential operators and space dependent parameters, like ``H = kx * A(x) * kx``
 
+# Examples
+Please see our [showcase notebook](examples/showcase.ipynb) (you can use nbviewer) as starting point.
 
 # Installation (with ``pip``)
 ```
