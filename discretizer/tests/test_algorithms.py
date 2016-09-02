@@ -2,6 +2,7 @@ from __future__ import print_function, division
 
 import sympy
 import discretizer
+from discretizer.algorithms import read_coordinates
 from discretizer.algorithms import split_factors
 from discretizer.algorithms import wavefunction_name
 from discretizer.algorithms import derivate
@@ -20,6 +21,21 @@ Psi = sympy.Function(wavefunction_name)(x, y, z)
 A, B = sympy.symbols('A B', commutative=False)
 
 ns = {'A': A, 'B': B, 'a_x': ax, 'a_y': ay, 'az': az, 'x': x, 'y': y, 'z': z}
+
+def test_read_coordinates():
+    test = {
+        kx**2                         : {'x'},
+        kx**2 + ky**2                 : {'x', 'y'},
+        kx**2 + ky**2 + kz**2         : {'x', 'y', 'z'},
+        ky**2 + kz**2                 : {'y', 'z'},
+        kz**2                         : {'z'},
+        kx * A(x,y) * kx              : {'x', 'y'},
+        kx**2 + kz * B(y)             : {'x', 'y', 'z'},
+    }
+    for inp, out in test.items():
+        got = read_coordinates(inp)
+        assert got == out,\
+            "Should be: split_factors({})=={}. Not {}".format(inp, out, got)            
 
 def test_split_factors_1():
     test = {

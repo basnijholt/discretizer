@@ -1,3 +1,8 @@
+## v0.4
+    * Simplifying Discretizer interface. Arguments ``space_dependent`` and
+      ``function_arguments`` are removed. Please see [notebook](examples/interface_change.ipynb)
+      for details.
+
 ## v0.3.1
     * Adding missing import of ``warnings``.
 

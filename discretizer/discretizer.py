@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import sympy
 
-from .algorithms import substitute_functions
+from .algorithms import read_coordinates
 from .algorithms import discretize
 
 from .postprocessing import offset_to_direction
@@ -33,23 +33,16 @@ class Discretizer(object):
     hamiltonian : sympy.Expr or sympy.Matrix instance
         Symbolic representation of a continous Hamiltonian. Momentum operators
         should be taken from ``discretizer.momentum_operators``.
-    space_dependent : set of strings
-        Set of parameters that will be interpreted as  as a function of
-        discrete coordinates. For example ``space_dependent={'A', 'B'}``.
     discrete_coordinates : set of strings
         Set of coordinates for which momentum operators will be treated as
         differential operators. For example ``discrete_coordinates={'x', 'y'}``.
         If left as a None they will be obtained from the input hamiltonian by
         reading present coordinates and momentum operators.
-    function_arguments : set of strings
-        Set of coordinates that are arguments for space_dependent functions.
-        By default they are equal to discrete_coordinates and must be a subsset
-        of those.
     interpolate : bool
         If True all space dependent parameters in onsite and hopping will be
         interpolated to depenend only on the values at site positions.
         Default is False.
-    both_hoppings_direction : bool
+    both_hoppings_directions : bool
         If True all hoppings will be returned. For example, if set to True, both
         hoppings into (1, 0) and (-1, 0) will be returned. Default is False.
     verbose : bool
@@ -73,52 +66,51 @@ class Discretizer(object):
     input_hamiltonian : sympy.Expr or sympy.Matrix instance
         The input hamiltonian after preprocessing (substitution of functions).
     """
-    def __init__(self, hamiltonian, space_dependent=None,
-                 discrete_coordinates=None, function_arguments=None,
+    def __init__(self, hamiltonian, discrete_coordinates=None,
                  lattice_constant=1, interpolate=False,
-                 both_hoppings_direction=False, verbose=False):
-        # preprocessing
-        ham_func, discr_coord = substitute_functions(hamiltonian,
-                                                     space_dependent,
-                                                     discrete_coordinates,
-                                                     function_arguments)
+                 both_hoppings_directions=False, verbose=False):
 
-        self.input_hamiltonian = ham_func
-        self.discrete_coordinates = discr_coord
+        self.input_hamiltonian = hamiltonian
+
+        if discrete_coordinates is None:
+            self.discrete_coordinates = read_coordinates(hamiltonian)
+        else:
+            self.discrete_coordinates = discrete_coordinates
+
         if verbose:
-            print('Discrete coordinates set to: ', sorted(discr_coord))
-            print()
+            print('Discrete coordinates set to: ',
+                  sorted(self.discrete_coordinates), end='\n\n')
 
         # making kwant lattice
-        dim = len(discr_coord) if discr_coord else 3
+        dim = len(self.discrete_coordinates)
 
-        self.lattice = Monatomic(lattice_constant*np.eye(dim).reshape(dim,dim))
+        self.lattice = Monatomic(lattice_constant*np.eye(dim).reshape(dim, dim))
         self.lattice_constant = lattice_constant
 
         # discretization
-        if discr_coord:
-            tb_hamiltonian = discretize(ham_func, discr_coord)
-            tb_hamiltonian = offset_to_direction(tb_hamiltonian, discr_coord)
+        if self.discrete_coordinates:
+            tb_ham = discretize(hamiltonian, self.discrete_coordinates)
+            tb_ham = offset_to_direction(tb_ham, self.discrete_coordinates)
         else:
-            tb_hamiltonian = {(0,0,0): ham_func}
-            discr_coord = {'x', 'y', 'z'}
+            tb_ham = {(0,0,0): hamiltonian}
+            self.discrete_coordinates = {'x', 'y', 'z'}
 
         if interpolate:
-            tb_hamiltonian = interpolate_tb_hamiltonian(tb_hamiltonian)
+            tb_ham = interpolate_tb_hamiltonian(tb_ham)
 
-        if not both_hoppings_direction:
-            keys = list(tb_hamiltonian)
-            tb_hamiltonian = {k: v for k, v in tb_hamiltonian.items()
+        if not both_hoppings_directions:
+            keys = list(tb_ham)
+            tb_ham = {k: v for k, v in tb_ham.items()
                               if k in sorted(keys)[len(keys)//2:]}
 
-        self.symbolic_hamiltonian = tb_hamiltonian.copy()
+        self.symbolic_hamiltonian = tb_ham.copy()
 
-        for key, val in tb_hamiltonian.items():
-            tb_hamiltonian[key] = val.subs(sympy.Symbol('a'), lattice_constant)
+        for key, val in tb_ham.items():
+            tb_ham[key] = val.subs(sympy.Symbol('a'), lattice_constant)
 
         # making kwant functions
-        tb = make_kwant_functions(tb_hamiltonian, discr_coord, verbose)
-        self.onsite = tb.pop((0,)*len(discr_coord))
+        tb = make_kwant_functions(tb_ham, self.discrete_coordinates, verbose)
+        self.onsite = tb.pop((0,)*len(self.discrete_coordinates))
         self.hoppings = {HoppingKind(d, self.lattice): val
                          for d, val in tb.items()}
 

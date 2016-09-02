@@ -22,73 +22,28 @@ wavefunction_name = 'Psi'
 
 
 # **************** Operation on sympy expressions **************************
-def substitute_functions(expression, space_dependent=None,
-                         discrete_coordinates=None, function_arguments=None):
-    """Substitute `AppliedUndef` functions into expression.
+def read_coordinates(expression):
+    """Read coordinates used in expression.
+
+    This function is used if ``discrete_coordinates`` are not provided by user.
 
     Parameters:
     -----------
     expression : sympy.Expr or sympy.Matrix instance
-    space_dependent : set of strings
-        Every symbol which name appears here will be substituted with a function
-        of discrete coordinates.
-    discrete_coordinates : set of strings
-        Set of coordinates that are treat as discrete. If left as a None they
-        will be obtained from the input expression by reading present
-        coordinates and momentum operators.
 
     Returns:
     --------
-    expression : sympy.Expr or sympy.Matrix instance
-        Input expression with all symbols representing space dependendent
-        parameters substituted with functions of coordinates and all
-        symbols representing constants substituted with commutative symbols.
+    discrete_coordinates : set of strings
     """
+    discrete_coordinates = set()
+    for a in expression.atoms(sympy.Symbol):
+        if a.name in ['k_x', 'k_y', 'k_z']:
+            discrete_coordinates.add(a.name.split('_')[1])
 
-    if not isinstance(discrete_coordinates, (type(None), set)):
-        raise TypeError("discrete_coordinates should be of type None or set")
+        if a.name in ['x', 'y', 'z']:
+            discrete_coordinates.add(a.name)
 
-    if not isinstance(space_dependent, (type(None), set)):
-        raise TypeError("space_dependent should be of type None or set")
-
-    if isinstance(expression, (int, float, sympy.Integer, sympy.Float)):
-        if discrete_coordinates is None:
-            discrete_coordinates = set()
-        return expression, discrete_coordinates
-
-    if space_dependent is None:
-        space_dependent = set()
-
-    if discrete_coordinates is None:
-        discrete_coordinates = set()
-        for a in expression.atoms(sympy.Symbol):
-            if a.name in ['k_x', 'k_y', 'k_z']:
-                discrete_coordinates.add(a.name.split('_')[1])
-
-    if function_arguments is None:
-        function_arguments = discrete_coordinates
-
-    if not function_arguments.issubset(discrete_coordinates):
-        raise ValueError('function_arguments must be a subsset of discrete_coordinates')
-
-    space_dependent = {s for s in expression.atoms(sympy.Symbol)
-                       if s.name in space_dependent}
-
-    arg_names = sorted(list(function_arguments))
-    coordinates = [sympy.Symbol(s, commutative=False) for s in arg_names]
-
-    momentum_names = {'k_{}'.format(s) for s in discrete_coordinates}
-    momentum_operators = sympy.symbols(momentum_names, commutative=False)
-
-    subs = {s: s(*coordinates) for s in space_dependent}
-    expression = expression.subs(subs)
-
-    constants = expression.atoms(sympy.Symbol)
-    constants = constants - set(momentum_operators) - set(coordinates)
-    subs = {s: sympy.Symbol(s.name) for s in constants}
-    expression = expression.subs(subs)
-
-    return expression, discrete_coordinates
+    return discrete_coordinates
 
 def split_factors(expression, discrete_coordinates):
     """ Split symbolic `expression` for a discretization step.
