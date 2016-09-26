@@ -1,6 +1,14 @@
+## Unreleased
+* Discretizer doesn't crash when input is an matrix when discrete_coordinates are an empty set
+
+
+## v0.4.1
+* Discretizer doesn't crash when discrete_coordinates are an empty set
+
+
 ## v0.4
 * Simplifying Discretizer interface. Arguments ``space_dependent`` and
-  ``function_arguments`` are removed. Please see [this](examples/interface_change.ipynb) 
+  ``function_arguments`` are removed. Please see [this](examples/interface_change.ipynb)
 notebook for details.
 
 ## v0.3.1

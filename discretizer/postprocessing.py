@@ -72,6 +72,7 @@ def make_return_string(expr):
     expr = expr.subs(sympy.I, sympy.Symbol('1.j')) # quick hack
     output = lambdastr((), expr, printer=NumericPrinter)[len('lambda : '):]
     output = output.replace('MutableDenseMatrix', 'np.array')
+    output = output.replace('ImmutableMatrix', 'np.array')
 
     return 'return {}'.format(output), func_symbols, const_symbols
 
