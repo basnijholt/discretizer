@@ -81,12 +81,6 @@ class Discretizer(object):
             print('Discrete coordinates set to: ',
                   sorted(self.discrete_coordinates), end='\n\n')
 
-        # making kwant lattice
-        dim = len(self.discrete_coordinates)
-
-        self.lattice = Monatomic(lattice_constant*np.eye(dim).reshape(dim, dim))
-        self.lattice_constant = lattice_constant
-
         # discretization
         if self.discrete_coordinates:
             tb_ham = discretize(hamiltonian, self.discrete_coordinates)
@@ -107,6 +101,12 @@ class Discretizer(object):
 
         for key, val in tb_ham.items():
             tb_ham[key] = val.subs(sympy.Symbol('a'), lattice_constant)
+
+        # making kwant lattice
+        dim = len(self.discrete_coordinates)
+
+        self.lattice = Monatomic(lattice_constant*np.eye(dim).reshape(dim, dim))
+        self.lattice_constant = lattice_constant
 
         # making kwant functions
         tb = make_kwant_functions(tb_ham, self.discrete_coordinates, verbose)
